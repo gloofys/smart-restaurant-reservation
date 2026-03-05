@@ -56,7 +56,7 @@ public class ReservationController {
 
         occupied.retainAll(visibleTableIds);
 
-        Table best = recommendationService.recommendTable(
+        List<Long> best = recommendationService.recommendTables(
                 request.partySize,
                 start,
                 end,
@@ -67,7 +67,7 @@ public class ReservationController {
         SearchResponse response = new SearchResponse();
         response.availableTables = tables.stream().map(this::toDto).toList();
         response.occupiedTableIDs = occupied;
-        response.recommendedTableIDs = (best == null) ? List.of() : List.of(best.getId());
+        response.recommendedTableIDs = best;
         return response;
     }
 

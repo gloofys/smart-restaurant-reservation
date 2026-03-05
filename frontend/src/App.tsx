@@ -6,16 +6,14 @@ import { searchTables } from "./components/api/api";
 import type { Table } from "./types/table";
 
 export default function App() {
-    // server data
     const [tables, setTables] = useState<Table[]>([]);
     const [occupied, setOccupied] = useState<number[]>([]);
+    const [recommended, setRecommended] = useState<number[]>([]);
 
-    // hard filters (server)
     const [start, setStart] = useState("2026-03-05T19:00");
     const [partySize, setPartySize] = useState(3);
     const [zone, setZone] = useState("ANY");
 
-    // soft filters (client)
     const [preferences, setPreferences] = useState<string[]>([]);
 
     const [loading, setLoading] = useState(false);
@@ -24,6 +22,7 @@ export default function App() {
     async function handleSearch() {
         setLoading(true);
         setError(null);
+
         try {
             const payload: any = {
                 start: normalizeDatetimeLocal(start),
@@ -31,11 +30,13 @@ export default function App() {
             };
 
             if (zone !== "ANY") payload.zone = zone;
+            if (preferences.length > 0) payload.preferences = preferences;
 
             const res = await searchTables(payload);
 
             setTables(res.availableTables);
             setOccupied(res.occupiedTableIDs);
+            setRecommended(res.recommendedTableIDs);
         } catch (e: any) {
             setError(e.message ?? "Search failed");
         } finally {
@@ -45,9 +46,11 @@ export default function App() {
 
     useEffect(() => {
         handleSearch();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-
+    // Optional: still allow preferences to "visually" filter the shown tables live.
+    // If you want preferences to affect ONLY recommendation (backend), then remove this memo and just use tables directly.
     const visibleTables = useMemo(() => {
         if (preferences.length === 0) return tables;
 
@@ -55,37 +58,6 @@ export default function App() {
             preferences.every((p) => (t.preferences ?? []).includes(p))
         );
     }, [tables, preferences]);
-
-    const recommended = useMemo(() => {
-        const isFreeAndFits = (t: Table) => !occupied.includes(t.id) && t.capacity >= partySize;
-
-        let candidates = visibleTables.filter(isFreeAndFits);
-
-        if (candidates.length === 0) {
-            candidates = tables.filter(isFreeAndFits);
-        }
-
-        if (candidates.length === 0) return [];
-
-        const score = (t: Table) => {
-            let s = 0;
-
-            s -= (t.capacity - partySize);
-
-            for (const p of preferences) {
-                if ((t.preferences ?? []).includes(p)) s += 5;
-            }
-
-            return s;
-        };
-
-        let best = candidates[0];
-        for (const t of candidates) {
-            if (score(t) > score(best)) best = t;
-        }
-
-        return [best.id];
-    }, [visibleTables, tables, occupied, partySize, preferences]);
 
     return (
         <div className="p-6 space-y-4">
@@ -111,7 +83,6 @@ export default function App() {
     );
 }
 
-// ensures "YYYY-MM-DDTHH:mm" -> "YYYY-MM-DDTHH:mm:00"
 function normalizeDatetimeLocal(v: string) {
     return v.length === 16 ? `${v}:00` : v;
 }
