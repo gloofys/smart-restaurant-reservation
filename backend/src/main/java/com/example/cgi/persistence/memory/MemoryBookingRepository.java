@@ -41,7 +41,7 @@ public class MemoryBookingRepository implements BookingRepository {
                 LocalTime.of(20, 0)
         );
 
-        double dayMultiplier = isWeekend(date) ? 1.15 : 1.0;
+        double dayMultiplier = isWeekend(date) ? 1.05 : 1.0;
 
         Map<Long, List<TimeInterval>> bookedByTable = new HashMap<>();
         for (Table t : tables) bookedByTable.put(t.getId(), new ArrayList<>());
@@ -49,7 +49,7 @@ public class MemoryBookingRepository implements BookingRepository {
         for (Table table : tables) {
             for (LocalTime slot : slots) {
 
-                double baseP = isDinner(slot) ? 0.45 : 0.30;
+                double baseP = isDinner(slot) ? 0.22 : 0.15;
                 double p = clamp01(baseP * dayMultiplier);
 
                 if (random.nextDouble() > p) continue;
