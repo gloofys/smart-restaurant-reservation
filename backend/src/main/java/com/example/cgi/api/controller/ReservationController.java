@@ -35,10 +35,11 @@ public class ReservationController {
         LocalDateTime end = start.plusMinutes(duration);
 
         Set<Preference> preferences = (request.preferences == null) ? Set.of() : request.preferences;
+
         List<Table> tables = tableRepository.findAll();
-        if (request.Zone != null) {
+        if (request.zone != null) {
             tables = tables.stream()
-                    .filter(t -> t.getZone() == request.Zone)
+                    .filter(t -> t.getZone() == request.zone)
                     .toList();
         }
 
@@ -49,14 +50,26 @@ public class ReservationController {
                 .map(Booking::getTableId)
                 .collect(Collectors.toSet());
 
-        Table best = recommendationService.recommendTable(request.partySize, start, end, preferences);
+        Set<Long> visibleTableIds = tables.stream()
+                .map(Table::getId)
+                .collect(Collectors.toSet());
+
+        occupied.retainAll(visibleTableIds);
+
+        Table best = recommendationService.recommendTable(
+                request.partySize,
+                start,
+                end,
+                preferences,
+                request.zone
+        );
 
         SearchResponse response = new SearchResponse();
         response.availableTables = tables.stream().map(this::toDto).toList();
         response.occupiedTableIDs = occupied;
         response.recommendedTableIDs = (best == null) ? List.of() : List.of(best.getId());
         return response;
-}
+    }
 
     private TableDto toDto(Table table) {
         TableDto dto = new TableDto();

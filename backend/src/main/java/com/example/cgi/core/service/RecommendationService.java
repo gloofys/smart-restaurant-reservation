@@ -3,6 +3,7 @@ package com.example.cgi.core.service;
 import com.example.cgi.core.domain.Booking;
 import com.example.cgi.core.domain.Preference;
 import com.example.cgi.core.domain.Table;
+import com.example.cgi.core.domain.Zone;
 import com.example.cgi.persistence.repository.BookingRepository;
 import com.example.cgi.persistence.repository.TableRepository;
 import org.springframework.stereotype.Service;
@@ -24,28 +25,31 @@ public class RecommendationService {
         this.bookingRepository = bookingRepository;
     }
 
-    public Table recommendTable(int partySize,
-                                LocalDateTime start,
-                                LocalDateTime end,
-                                Set<Preference> preferences) {
-
+    public Table recommendTable(
+            int partySize,
+            LocalDateTime start,
+            LocalDateTime end,
+            Set<Preference> preferences,
+            Zone zone // null => any zone
+    ) {
         List<Table> tables = tableRepository.findAll();
         List<Booking> bookings = bookingRepository.findAll();
 
         return tables.stream()
 
+                .filter(t -> zone == null || t.getZone() == zone)
 
                 .filter(t -> t.getCapacity() >= partySize)
-
 
                 .filter(table ->
                         bookings.stream()
                                 .filter(b -> b.getTableId() == table.getId())
                                 .noneMatch(b -> b.overlaps(start, end))
                 )
-//ai stream api
+
                 .max(Comparator.comparingInt(t ->
                         scoreTable(t, partySize, preferences)))
+
                 .orElse(null);
     }
 

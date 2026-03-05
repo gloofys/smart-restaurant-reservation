@@ -3,5 +3,6 @@ Content-Type: application/json
 
 {
   "start": "2026-03-05T19:00:00",
-  "partySize": 3
+  "partySize": 4,
+  "zone": "TERRACE"
 }

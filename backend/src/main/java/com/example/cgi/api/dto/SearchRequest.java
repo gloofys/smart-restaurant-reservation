@@ -10,6 +10,6 @@ public class SearchRequest {
     public LocalDateTime start;
     public Integer durationMinutes;
     public Integer partySize;
-    public Zone Zone;
+    public Zone zone;
     public Set<Preference> preferences;
 }
