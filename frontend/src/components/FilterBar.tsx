@@ -6,7 +6,13 @@ type Props = {
     onSearch: () => void;
 };
 
-export default function FilterBar({ start, partySize, zone, onChange, onSearch }: Props) {
+export default function FilterBar({
+                                      start,
+                                      partySize,
+                                      zone,
+                                      onChange,
+                                      onSearch,
+                                  }: Props) {
     return (
         <div className="flex flex-wrap gap-3 items-end bg-white border rounded-xl p-4 shadow-sm">
             <div className="flex flex-col">
@@ -46,6 +52,7 @@ export default function FilterBar({ start, partySize, zone, onChange, onSearch }
             </div>
 
             <button
+                type="button"
                 onClick={onSearch}
                 className="bg-gray-900 text-white px-5 py-2 rounded-lg hover:opacity-90"
             >
