@@ -10,10 +10,10 @@ export type ZoneBox = {
 export const ZONES: ZoneBox[] = [
     {
         name: "Main Hall",
-        x: 40,
+        x: 60,
         y: 60,
-        width: 420,
-        height: 320,
+        width: 360,
+        height: 380,
         color: "bg-blue-50"
     },
     {
@@ -21,14 +21,14 @@ export const ZONES: ZoneBox[] = [
         x: 480,
         y: 60,
         width: 260,
-        height: 200,
+        height: 220,
         color: "bg-green-50"
     },
     {
         name: "Private Room",
         x: 480,
-        y: 280,
-        width: 260,
+        y: 300,
+        width: 320,
         height: 200,
         color: "bg-purple-50"
     }
