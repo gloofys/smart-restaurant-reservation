@@ -6,7 +6,7 @@ type Props = {
 const PREFS = [
     { key: "WINDOW", label: "Window" },
     { key: "QUIET", label: "Quiet" },
-    { key: "NEAR_PLAY_AREA", label: "Near playground" },
+    { key: "NEAR_PLAY_AREA", label: "Near play area" },
 ] as const;
 
 export default function PreferenceFilters({ preferences, onChange }: Props) {

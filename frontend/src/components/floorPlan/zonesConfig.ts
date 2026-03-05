@@ -5,6 +5,7 @@ export type ZoneBox = {
     width: number
     height: number
     color: string
+    kind?: "ZONE" | "FEATURE"
 }
 
 export const ZONES: ZoneBox[] = [
@@ -31,5 +32,12 @@ export const ZONES: ZoneBox[] = [
         width: 320,
         height: 200,
         color: "bg-purple-50"
-    }
+    },
+    {   name: "Play Area",
+        x: 70,
+        y: 470,
+        width: 140,
+        height: 110,
+        color: "bg-yellow-50",
+        kind: "FEATURE" },
 ];
