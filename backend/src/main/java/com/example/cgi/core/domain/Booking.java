@@ -29,4 +29,8 @@ public class Booking {
     public int getPartySize() {
         return partySize;
     }
+
+    public boolean overlaps(LocalDateTime otherStart, LocalDateTime otherEnd) {
+        return startTime.isBefore(otherEnd) && otherStart.isBefore(endTime);
+    }
 }
