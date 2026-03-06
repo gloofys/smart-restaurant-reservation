@@ -23,12 +23,6 @@ public class RecommendationService {
         this.bookingRepository = bookingRepository;
     }
 
-    /**
-     * Returns recommended table IDs.
-     * - If one table fits: returns [tableId]
-     * - Else tries a mergeable pair: returns [id1, id2]
-     * - Else: returns empty list
-     */
     public List<Long> recommendTables(
             int partySize,
             LocalDateTime start,

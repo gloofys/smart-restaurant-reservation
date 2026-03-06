@@ -254,7 +254,6 @@ export default function App() {
                     <BookingSuccessPage
                         start={appliedStart}
                         partySize={appliedPartySize}
-                        zone={appliedZone}
                         tableLabel={selectedTables.map((t) => `Table ${t.id}`).join(" + ")}
                         mealName={confirmedExtras?.mealName}
                         mealQuantity={confirmedExtras?.quantity}

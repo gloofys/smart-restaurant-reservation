@@ -20,6 +20,9 @@ export default function FilterBar({
                 <input
                     type="datetime-local"
                     value={start}
+                    step={1800}
+                    min="2026-01-01T10:00"
+                    max="2026-12-31T22:00"
                     onChange={(e) => onChange({ start: e.target.value })}
                     className="border rounded-lg px-3 py-2"
                 />

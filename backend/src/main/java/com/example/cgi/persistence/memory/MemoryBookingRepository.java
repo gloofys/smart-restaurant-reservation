@@ -15,7 +15,7 @@ public class MemoryBookingRepository implements BookingRepository {
     private final List<Booking> bookings = new ArrayList<>();
     private final Random random = new Random(42);
 
-    private static final int DAYS_TO_SEED = 14;
+    private static final int DAYS_TO_SEED = 90;
 
     private static final int MIN_DURATION_MIN = 120;
     private static final int MAX_DURATION_MIN = 180;
