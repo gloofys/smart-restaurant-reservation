@@ -14,9 +14,9 @@ export default function FilterBar({
                                       onSearch,
                                   }: Props) {
     return (
-        <div className="flex flex-wrap gap-3 items-end bg-white border rounded-xl p-4 shadow-sm">
+        <div className="flex flex-wrap gap-3 items-end bg-slate-50 rounded-xl p-4">
             <div className="flex flex-col">
-                <label className="text-xs text-gray-600 font-medium">Kuupäev & kellaaeg</label>
+                <label className="text-xs text-gray-600 font-medium">Date & Time</label>
                 <input
                     type="datetime-local"
                     value={start}
@@ -26,7 +26,7 @@ export default function FilterBar({
             </div>
 
             <div className="flex flex-col">
-                <label className="text-xs text-gray-600 font-medium">Inimeste arv</label>
+                <label className="text-xs text-gray-600 font-medium">Party size</label>
                 <input
                     type="number"
                     min={1}
@@ -38,13 +38,13 @@ export default function FilterBar({
             </div>
 
             <div className="flex flex-col">
-                <label className="text-xs text-gray-600 font-medium">Tsoon</label>
+                <label className="text-xs text-gray-600 font-medium">Zone</label>
                 <select
                     value={zone}
                     onChange={(e) => onChange({ zone: e.target.value })}
                     className="border rounded-lg px-3 py-2 w-44"
                 >
-                    <option value="ANY">Kõik</option>
+                    <option value="ANY">All zones</option>
                     <option value="MAIN_HALL">Main Hall</option>
                     <option value="TERRACE">Terrace</option>
                     <option value="PRIVATE_ROOM">Private Room</option>

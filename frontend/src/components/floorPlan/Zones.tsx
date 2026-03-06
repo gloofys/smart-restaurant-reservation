@@ -23,7 +23,7 @@ export default function Zones() {
                         }}
                     >
 
-                        <div className="absolute inset-0 flex items-center justify-center text-gray-300 text-sm font-semibold select-none">
+                        <div className="absolute inset-0 flex items-center justify-center text-gray-500 text-sm font-semibold select-none">
                             {zone.name}
                         </div>
                     </div>

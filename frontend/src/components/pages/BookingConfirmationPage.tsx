@@ -72,7 +72,7 @@ export default function BookingConfirmationPage({
     }, [addedOffer]);
 
     function handleDecrease() {
-        setQuantity((prev) => Math.max(1, prev - 1));
+        setQuantity((prev) => Math.max(0, prev - 1));
     }
 
     function handleIncrease() {

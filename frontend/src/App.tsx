@@ -5,6 +5,7 @@ import PreferenceFilters from "./components/PreferenceFilters";
 import { searchTables } from "./components/api/api";
 import type { Table } from "./types/table";
 import BookingConfirmationPage from "./components/pages/BookingConfirmationPage";
+import SelectionSummary from "./components/SelectionSummary.tsx";
 
 type Step = "search" | "confirm";
 
@@ -66,14 +67,12 @@ export default function App() {
     }, []);
 
     const selectedTables = tables.filter((t) => selectedTableIds.includes(t.id));
-
     const selectedCapacity = selectedTables.reduce((sum, t) => sum + t.capacity, 0);
 
     const canContinue = requiresMergedTables
         ? selectedTableIds.length === 2
         : selectedTableIds.length === 1;
 
-    // BASE availability ignoring preferences
     const hasBaseSingleTable = tables.some((table) => {
         const matchesZone = appliedZone === "ANY" || table.zone === appliedZone;
 
@@ -84,7 +83,6 @@ export default function App() {
         );
     });
 
-    // Availability including preferences
     const hasPreferenceMatchedSingleTable = tables.some((table) => {
         const matchesZone = appliedZone === "ANY" || table.zone === appliedZone;
 
@@ -133,117 +131,104 @@ export default function App() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header className="border-b bg-white sticky top-0 z-10">
-                <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
-                    <h1 className="text-lg font-semibold text-gray-900">
+        <div className="min-h-screen bg-slate-50">
+            <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
+                <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+                    <h1 className="text-xl font-semibold text-slate-900">
                         Smart Restaurant Booking
                     </h1>
                 </div>
             </header>
 
-            <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
+            <main className="mx-auto max-w-6xl px-6 py-8">
                 {step === "search" && (
-                    <>
-                        <FilterBar
-                            start={start}
-                            partySize={partySize}
-                            zone={zone}
-                            onChange={(patch) => {
-                                if (patch.start !== undefined) setStart(patch.start);
-                                if (patch.partySize !== undefined) setPartySize(patch.partySize);
-                                if (patch.zone !== undefined) setZone(patch.zone);
-                            }}
-                            onSearch={handleSearch}
-                        />
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <div className="p-6">
+                            <FilterBar
+                                start={start}
+                                partySize={partySize}
+                                zone={zone}
+                                onChange={(patch) => {
+                                    if (patch.start !== undefined) setStart(patch.start);
+                                    if (patch.partySize !== undefined) setPartySize(patch.partySize);
+                                    if (patch.zone !== undefined) setZone(patch.zone);
+                                }}
+                                onSearch={handleSearch}
+                            />
+                        </div>
 
-                        <PreferenceFilters
-                            preferences={preferences}
-                            onChange={(next) => {
-                                setPreferences(next);
-                                setSelectedTableIds([]);
-                            }}
-                        />
+                        <div className="px-6 pb-6">
+                            <PreferenceFilters
+                                preferences={preferences}
+                                onChange={(next) => {
+                                    setPreferences(next);
+                                    setSelectedTableIds([]);
+                                }}
+                            />
+                        </div>
 
-                        {error && (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                                {error}
-                            </div>
-                        )}
-
-                        {loading && (
-                            <div className="rounded-xl border bg-white p-4 text-sm text-gray-600 shadow-sm">
-                                Loading...
-                            </div>
-                        )}
-
-                        {noTablesForSearch && !loading && !error && (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                                No tables available for a party of {appliedPartySize} at this time.
-                                Please choose another date or time.
-                            </div>
-                        )}
-
-                        {noTablesForPreferences && !loading && !error && (
-                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-                                No tables match the selected preferences. Try removing some filters.
-                            </div>
-                        )}
-
-                        <FloorPlan
-                            tables={tables}
-                            preferences={preferences}
-                            occupied={occupied}
-                            recommended={recommended}
-                            selectedTableIds={selectedTableIds}
-                            partySize={appliedPartySize}
-                            zone={appliedZone}
-                            onSelectTable={handleSelectTable}
-                        />
-
-                        {selectedTables.length > 0 && (
-                            <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
-                                <div>
-                                    <div className="text-sm text-gray-500">
-                                        {requiresMergedTables ? "Selected tables" : "Selected table"}
-                                    </div>
-
-                                    <div className="font-semibold text-gray-900">
-                                        {selectedTables.map((t) => `Table ${t.id}`).join(" + ")}
-                                    </div>
-                                </div>
-
-                                <div className="text-sm text-gray-600">
-                                    Total capacity: {selectedCapacity}
-                                </div>
-
-                                {requiresMergedTables && (
-                                    <div className="text-sm text-gray-600">
-                                        For parties of 9+, please choose both highlighted tables.
+                        {(error || loading || noTablesForSearch || noTablesForPreferences) && (
+                            <div className="border-t border-slate-100 px-6 py-4 space-y-3">
+                                {error && (
+                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                        {error}
                                     </div>
                                 )}
 
-                                <div className="flex gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedTableIds([])}
-                                        className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                                    >
-                                        Cancel
-                                    </button>
+                                {loading && (
+                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                                        Loading...
+                                    </div>
+                                )}
 
-                                    <button
-                                        type="button"
-                                        disabled={!canContinue}
-                                        onClick={() => setStep("confirm")}
-                                        className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-                                    >
-                                        Continue
-                                    </button>
-                                </div>
+                                {noTablesForSearch && !loading && !error && (
+                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                        No tables available for a party of {appliedPartySize} at this time.
+                                        Please choose another date or time.
+                                    </div>
+                                )}
+
+                                {noTablesForPreferences && !loading && !error && (
+                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                                        No tables match the selected preferences. Try removing some filters.
+                                    </div>
+                                )}
                             </div>
                         )}
-                    </>
+
+                        <div className="border-t border-slate-100 p-6 space-y-4">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                                <div>
+                                    <h2 className="text-lg font-semibold text-slate-900">
+                                        Floor plan
+                                    </h2>
+                                    <p className="text-sm text-slate-500">
+                                        Choose the most suitable table for your reservation.
+                                    </p>
+                                </div>
+
+                            </div>
+
+                            <FloorPlan
+                                tables={tables}
+                                preferences={preferences}
+                                occupied={occupied}
+                                recommended={recommended}
+                                selectedTableIds={selectedTableIds}
+                                partySize={appliedPartySize}
+                                zone={appliedZone}
+                                onSelectTable={handleSelectTable}
+                            />
+                        </div>
+                        <SelectionSummary
+                            selectedTables={selectedTables}
+                            selectedCapacity={selectedCapacity}
+                            requiresMergedTables={requiresMergedTables}
+                            canContinue={canContinue}
+                            onCancel={() => setSelectedTableIds([])}
+                            onContinue={() => setStep("confirm")}
+                        />
+                    </div>
                 )}
 
                 {step === "confirm" && selectedTables.length > 0 && (

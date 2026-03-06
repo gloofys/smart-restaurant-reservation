@@ -18,8 +18,8 @@ export default function PreferenceFilters({ preferences, onChange }: Props) {
     }
 
     return (
-        <div className="bg-white border rounded-xl p-4 shadow-sm">
-            <div className="text-xs text-gray-600 font-medium mb-2">Eelistused</div>
+        <div className="bg-slate-50 rounded-xl p-4">
+            <div className="text-xs text-gray-600 font-medium mb-2">Preferences</div>
 
             <div className="flex flex-wrap gap-2">
                 {PREFS.map((p) => {
