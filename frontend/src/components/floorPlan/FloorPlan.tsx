@@ -7,16 +7,26 @@ type Props = {
     tables: Table[];
     occupied: number[];
     recommended: number[];
-    onSelectTable?: (table: Table) => void
+    selectedTableIds: number[];
+    partySize: number;
+    onSelectTable: (table: Table) => void;
 };
 
-export default function FloorPlan({ tables, occupied, recommended }: Props) {
+export default function FloorPlan({
+                                      tables,
+                                      occupied,
+                                      recommended,
+                                      selectedTableIds,
+                                      partySize,
+                                      onSelectTable,
+                                  }: Props) {
+    const requiresMergedTables = partySize >= 9;
+
     return (
         <div>
             <Legend />
 
             <div className="relative w-[900px] h-[600px] rounded-xl border bg-white shadow-sm overflow-hidden">
-                {/* grid */}
                 <div
                     className="absolute inset-0 opacity-40"
                     style={{
@@ -29,14 +39,27 @@ export default function FloorPlan({ tables, occupied, recommended }: Props) {
                 <div className="absolute inset-0">
                     <Zones />
 
-                    {tables.map((table) => (
-                        <TableNode
-                            key={table.id}
-                            table={table}
-                            occupied={occupied.includes(table.id)}
-                            recommended={recommended.includes(table.id)}
-                        />
-                    ))}
+                    {tables.map((table) => {
+                        const isOccupied = occupied.includes(table.id);
+                        const isRecommended = recommended.includes(table.id);
+                        const isSelected = selectedTableIds.includes(table.id);
+
+                        const dimmed = requiresMergedTables
+                            ? !isSelected && !isRecommended
+                            : selectedTableIds.length > 0 && !isSelected;
+
+                        return (
+                            <TableNode
+                                key={table.id}
+                                table={table}
+                                occupied={isOccupied}
+                                recommended={isRecommended}
+                                selected={isSelected}
+                                dimmed={dimmed}
+                                onSelect={() => onSelectTable(table)}
+                            />
+                        );
+                    })}
                 </div>
             </div>
         </div>

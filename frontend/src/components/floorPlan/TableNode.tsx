@@ -5,11 +5,11 @@ type Props = {
     occupied: boolean;
     recommended: boolean;
     selected?: boolean;
-    onSelect?: (id: number) => void;
+    dimmed?: boolean;
+    onSelect?: () => void;
 };
 
 function getDims(capacity: number) {
-    // width/height by capacity (feel free to tweak)
     if (capacity <= 2) return { w: 46, h: 46, shape: "round" as const };
     if (capacity <= 4) return { w: 58, h: 58, shape: "square" as const };
     if (capacity <= 6) return { w: 78, h: 58, shape: "rect" as const };
@@ -21,12 +21,13 @@ export default function TableNode({
                                       occupied,
                                       recommended,
                                       selected,
+                                      dimmed,
                                       onSelect,
                                   }: Props) {
     const { w, h, shape } = getDims(table.capacity);
 
     const ring = selected
-        ? "ring-2 ring-blue-500"
+        ? "ring-4 ring-blue-500 border-blue-500 shadow-xl z-20"
         : recommended
             ? "ring-2 ring-green-500"
             : occupied
@@ -34,8 +35,11 @@ export default function TableNode({
                 : "ring-1 ring-gray-200";
 
     const bg = occupied ? "bg-gray-50" : "bg-white";
-    const opacity = occupied ? "opacity-70" : "opacity-100";
-    const cursor = occupied ? "cursor-not-allowed" : "cursor-pointer";
+    const cursor = occupied || dimmed ? "cursor-not-allowed" : "cursor-pointer";
+
+    const opacity = dimmed ? "opacity-20" : occupied ? "opacity-70" : "opacity-100";
+    const blur = dimmed ? "blur-[1px]" : "";
+    const scale = selected ? "scale-110" : recommended ? "scale-105" : "scale-100";
 
     const radius =
         shape === "round" ? "9999px" : shape === "square" ? "14px" : "16px";
@@ -43,9 +47,9 @@ export default function TableNode({
     return (
         <button
             type="button"
-            disabled={occupied}
-            onClick={() => onSelect?.(table.id)}
-            className={`absolute ${cursor} ${opacity} ${bg} border border-gray-200 shadow-sm hover:shadow-md transition-shadow ${ring}`}
+            disabled={occupied || dimmed}
+            onClick={onSelect}
+            className={`absolute ${cursor} ${opacity} ${bg} ${blur} ${ring} ${scale} border border-gray-200 transition-all duration-200 hover:shadow-md`}
             style={{
                 left: table.x,
                 top: table.y,
@@ -61,16 +65,19 @@ export default function TableNode({
                 <div className="text-sm font-bold text-gray-900">{table.capacity}</div>
             </div>
 
-            {recommended && (
+            {selected ? (
+                <div className="absolute -top-2 -right-2 rounded-full bg-blue-600 text-white text-[10px] px-2 py-0.5 shadow">
+                    Selected
+                </div>
+            ) : recommended && !occupied ? (
                 <div className="absolute -top-2 -right-2 rounded-full bg-green-600 text-white text-[10px] px-2 py-0.5 shadow">
                     Best
                 </div>
-            )}
-            {occupied && (
+            ) : occupied ? (
                 <div className="absolute -top-2 -right-2 rounded-full bg-red-600 text-white text-[10px] px-2 py-0.5 shadow">
                     Busy
                 </div>
-            )}
+            ) : null}
         </button>
     );
 }
