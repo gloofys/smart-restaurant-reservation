@@ -6,8 +6,9 @@ import { searchTables } from "./components/api/api";
 import type { Table } from "./types/table";
 import BookingConfirmationPage from "./components/pages/BookingConfirmationPage";
 import SelectionSummary from "./components/SelectionSummary.tsx";
+import BookingSuccessPage from "./components/pages/BookingSuccessPage.tsx";
 
-type Step = "search" | "confirm";
+type Step = "search" | "confirm" | "success";
 
 export default function App() {
     const [tables, setTables] = useState<Table[]>([]);
@@ -28,6 +29,12 @@ export default function App() {
 
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+
+    const [confirmedExtras, setConfirmedExtras] = useState<{
+        mealName?: string;
+        quantity?: number;
+        extrasTotal: number;
+    } | null>(null);
 
     const requiresMergedTables = appliedPartySize >= 9;
 
@@ -235,11 +242,27 @@ export default function App() {
                     <BookingConfirmationPage
                         start={appliedStart}
                         partySize={appliedPartySize}
-                        zone={appliedZone}
                         selectedTables={selectedTables}
                         onBack={() => setStep("search")}
-                        onConfirm={() => {
-                            console.log("Booking confirmed");
+                        onConfirm={(payload) => {
+                            setConfirmedExtras(payload ?? { extrasTotal: 0 });
+                            setStep("success");
+                        }}
+                    />
+                )}
+                {step === "success" && selectedTables.length > 0 && (
+                    <BookingSuccessPage
+                        start={appliedStart}
+                        partySize={appliedPartySize}
+                        zone={appliedZone}
+                        tableLabel={selectedTables.map((t) => `Table ${t.id}`).join(" + ")}
+                        mealName={confirmedExtras?.mealName}
+                        mealQuantity={confirmedExtras?.quantity}
+                        extrasTotal={confirmedExtras?.extrasTotal}
+                        onNewBooking={() => {
+                            setSelectedTableIds([]);
+                            setConfirmedExtras(null);
+                            setStep("search");
                         }}
                     />
                 )}

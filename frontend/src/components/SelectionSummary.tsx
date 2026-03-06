@@ -49,7 +49,7 @@ export default function SelectionSummary({
                             <div className="text-sm text-slate-600">
                                 {requiresMergedTables
                                     ? "Select both highlighted tables to continue."
-                                    : "Select one suitable table from the floor plan to continue."}
+                                    : "Select one suitable table to continue."}
                             </div>
                         </>
                     )}

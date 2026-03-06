@@ -13,7 +13,7 @@ export default function Zones() {
                             "absolute rounded-lg pointer-events-none",
                             isFeature
                                 ? "border-2 border-dashed border-yellow-400 bg-yellow-50/60"
-                                : `border border-dashed border-gray-300 ${zone.color}/40`,
+                                : `border border-dashed border-gray-500`,
                         ].join(" ")}
                         style={{
                             left: zone.x,

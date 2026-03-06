@@ -5,10 +5,13 @@ import type { Table } from "../../types/table";
 type Props = {
     start: string;
     partySize: number;
-    zone: string;
     selectedTables: Table[];
     onBack: () => void;
-    onConfirm: () => void;
+    onConfirm: (payload?: {
+        mealName?: string;
+        quantity?: number;
+        extrasTotal: number;
+    }) => void;
 };
 
 const CHEF_OFFER_PRICE = 19.99;
@@ -82,6 +85,11 @@ export default function BookingConfirmationPage({
     function handleAddToReservation() {
         if (!meal) return;
 
+        if (quantity === 0) {
+            setAddedOffer(null);
+            return;
+        }
+
         setAddedOffer({
             mealId: meal.idMeal,
             mealName: meal.strMeal,
@@ -93,7 +101,6 @@ export default function BookingConfirmationPage({
     const isAdded = addedOffer?.mealId === meal?.idMeal;
 
     return (
-        <div className="max-w-4xl">
             <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
                 <div>
                     <h2 className="text-2xl font-semibold">Booking confirmation</h2>
@@ -262,13 +269,18 @@ export default function BookingConfirmationPage({
 
                     <button
                         type="button"
-                        onClick={onConfirm}
+                        onClick={() =>
+                            onConfirm({
+                                mealName: addedOffer?.mealName,
+                                quantity: addedOffer?.quantity,
+                                extrasTotal: offerTotal,
+                            })
+                        }
                         className="rounded-lg bg-green-600 px-4 py-3 text-sm font-medium text-white hover:opacity-90"
                     >
                         Confirm booking
                     </button>
                 </section>
             </div>
-        </div>
     );
 }
