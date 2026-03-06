@@ -1,10 +1,10 @@
-import {useEffect, useMemo, useState} from "react";
+import { useEffect, useState } from "react";
 import FloorPlan from "./components/floorPlan/FloorPlan";
 import FilterBar from "./components/FilterBar";
 import PreferenceFilters from "./components/PreferenceFilters";
-import {searchTables} from "./components/api/api";
-import type {Table} from "./types/table";
-import BookingConfirmationPage from "././components/pages/BookingConfirmationPage";
+import { searchTables } from "./components/api/api";
+import type { Table } from "./types/table";
+import BookingConfirmationPage from "./components/pages/BookingConfirmationPage";
 
 type Step = "search" | "confirm";
 
@@ -51,7 +51,6 @@ export default function App() {
             setOccupied(res.occupiedTableIDs);
             setRecommended(res.recommendedTableIDs);
 
-            // only update applied state after a successful search
             setAppliedStart(start);
             setAppliedPartySize(partySize);
             setAppliedZone(zone);
@@ -64,24 +63,20 @@ export default function App() {
 
     useEffect(() => {
         handleSearch();
-
     }, []);
 
+    const selectedTables = tables.filter((t) => selectedTableIds.includes(t.id));
 
-    const visibleTables = useMemo(() => {
-        if (preferences.length === 0) return tables;
-
-        return tables.filter((t: any) =>
-            preferences.every((p) => (t.preferences ?? []).includes(p))
-        );
-    }, [tables, preferences]);
-
-    const selectedTables = visibleTables.filter((t) => selectedTableIds.includes(t.id));
     const selectedCapacity = selectedTables.reduce((sum, t) => sum + t.capacity, 0);
 
     const canContinue = requiresMergedTables
         ? selectedTableIds.length === 2
         : selectedTableIds.length === 1;
+
+    const noTablesAvailable =
+        !requiresMergedTables
+            ? tables.every((t) => t.capacity < appliedPartySize)
+            : recommended.length !== 2;
 
     function handleSelectTable(table: Table) {
         if (occupied.includes(table.id)) return;
@@ -91,7 +86,6 @@ export default function App() {
             return;
         }
 
-        // for large groups, only recommended pair is selectable
         const isAllowed = recommended.includes(table.id);
         if (!isAllowed) return;
 
@@ -108,95 +102,113 @@ export default function App() {
     }
 
     return (
-        <div className="p-6 space-y-4">
-            {step === "search" && (
-                <>
-                    <FilterBar
-                        start={start}
-                        partySize={partySize}
-                        zone={zone}
-                        onChange={(patch) => {
-                            if (patch.start !== undefined) setStart(patch.start);
-                            if (patch.partySize !== undefined) setPartySize(patch.partySize);
-                            if (patch.zone !== undefined) setZone(patch.zone);
-                        }}
-                        onSearch={handleSearch}
-                    />
+        <div className="min-h-screen bg-gray-50">
+            <header className="border-b bg-white sticky top-0 z-10">
+                <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+                    <h1 className="text-lg font-semibold text-gray-900">
+                        Smart Restaurant Booking
+                    </h1>
+                </div>
+            </header>
 
-                    <PreferenceFilters
-                        preferences={preferences}
-                        onChange={setPreferences}
-                    />
+            <main className="mx-auto max-w-5xl px-6 py-8 space-y-6">
+                {step === "search" && (
+                    <>
+                        <FilterBar
+                            start={start}
+                            partySize={partySize}
+                            zone={zone}
+                            onChange={(patch) => {
+                                if (patch.start !== undefined) setStart(patch.start);
+                                if (patch.partySize !== undefined) setPartySize(patch.partySize);
+                                if (patch.zone !== undefined) setZone(patch.zone);
+                            }}
+                            onSearch={handleSearch}
+                        />
 
-                    {error && <div className="text-sm text-red-600">{error}</div>}
-                    {loading && <div className="text-sm text-gray-600">Loading...</div>}
+                        <PreferenceFilters
+                            preferences={preferences}
+                            onChange={setPreferences}
+                        />
 
-                    <FloorPlan
-                        tables={visibleTables}
-                        occupied={occupied}
-                        recommended={recommended}
-                        selectedTableIds={selectedTableIds}
-                        partySize={appliedPartySize}
-                        onSelectTable={handleSelectTable}
-                    />
+                        {error && <div className="text-sm text-red-600">{error}</div>}
+                        {loading && <div className="text-sm text-gray-600">Loading...</div>}
 
-                    {selectedTables.length > 0 && (
-                        <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
-                            <div>
-                                <div className="text-sm text-gray-500">
-                                    {requiresMergedTables ? "Selected tables" : "Selected table"}
+                        {noTablesAvailable && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                No tables available for a party of {appliedPartySize} at this time.
+                                Please choose another date or time.
+                            </div>
+                        )}
+
+                        <FloorPlan
+                            tables={tables}
+                            preferences={preferences}
+                            occupied={occupied}
+                            recommended={recommended}
+                            selectedTableIds={selectedTableIds}
+                            partySize={appliedPartySize}
+                            onSelectTable={handleSelectTable}
+                        />
+
+                        {selectedTables.length > 0 && (
+                            <div className="rounded-xl border bg-white p-4 shadow-sm space-y-3">
+                                <div>
+                                    <div className="text-sm text-gray-500">
+                                        {requiresMergedTables ? "Selected tables" : "Selected table"}
+                                    </div>
+
+                                    <div className="font-semibold text-gray-900">
+                                        {selectedTables.map((t) => `Table ${t.id}`).join(" + ")}
+                                    </div>
                                 </div>
 
-                                <div className="font-semibold text-gray-900">
-                                    {selectedTables.map((t) => `Table ${t.id}`).join(" + ")}
-                                </div>
-                            </div>
-
-                            <div className="text-sm text-gray-600">
-                                Total capacity: {selectedCapacity}
-                            </div>
-
-                            {requiresMergedTables && (
                                 <div className="text-sm text-gray-600">
-                                    For parties of 9+, please choose both highlighted tables.
+                                    Total capacity: {selectedCapacity}
                                 </div>
-                            )}
 
-                            <div className="flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => setSelectedTableIds([])}
-                                    className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                                >
-                                    Cancel
-                                </button>
+                                {requiresMergedTables && (
+                                    <div className="text-sm text-gray-600">
+                                        For parties of 9+, please choose both highlighted tables.
+                                    </div>
+                                )}
 
-                                <button
-                                    type="button"
-                                    disabled={!canContinue}
-                                    onClick={() => setStep("confirm")}
-                                    className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-                                >
-                                    Continue
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedTableIds([])}
+                                        className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                                    >
+                                        Cancel
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        disabled={!canContinue}
+                                        onClick={() => setStep("confirm")}
+                                        className="rounded-lg bg-black px-4 py-2 text-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
+                                    >
+                                        Continue
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    )}
-                </>
-            )}
+                        )}
+                    </>
+                )}
 
-            {step === "confirm" && selectedTables.length > 0 && (
-                <BookingConfirmationPage
-                    start={appliedStart}
-                    partySize={appliedPartySize}
-                    zone={appliedZone}
-                    selectedTables={selectedTables}
-                    onBack={() => setStep("search")}
-                    onConfirm={() => {
-                        console.log("Booking confirmed");
-                    }}
-                />
-            )}
+                {step === "confirm" && selectedTables.length > 0 && (
+                    <BookingConfirmationPage
+                        start={appliedStart}
+                        partySize={appliedPartySize}
+                        zone={appliedZone}
+                        selectedTables={selectedTables}
+                        onBack={() => setStep("search")}
+                        onConfirm={() => {
+                            console.log("Booking confirmed");
+                        }}
+                    />
+                )}
+            </main>
         </div>
     );
 }
