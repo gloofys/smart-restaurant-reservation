@@ -73,10 +73,41 @@ export default function App() {
         ? selectedTableIds.length === 2
         : selectedTableIds.length === 1;
 
-    const noTablesAvailable =
-        !requiresMergedTables
-            ? tables.every((t) => t.capacity < appliedPartySize)
-            : recommended.length !== 2;
+    // BASE availability ignoring preferences
+    const hasBaseSingleTable = tables.some((table) => {
+        const matchesZone = appliedZone === "ANY" || table.zone === appliedZone;
+
+        return (
+            !occupied.includes(table.id) &&
+            table.capacity >= appliedPartySize &&
+            matchesZone
+        );
+    });
+
+    // Availability including preferences
+    const hasPreferenceMatchedSingleTable = tables.some((table) => {
+        const matchesZone = appliedZone === "ANY" || table.zone === appliedZone;
+
+        const matchesPreferences =
+            preferences.length === 0 ||
+            preferences.every((p) => (table.preferences ?? []).includes(p));
+
+        return (
+            !occupied.includes(table.id) &&
+            table.capacity >= appliedPartySize &&
+            matchesZone &&
+            matchesPreferences
+        );
+    });
+
+    const noTablesForSearch = requiresMergedTables
+        ? recommended.length !== 2
+        : !hasBaseSingleTable;
+
+    const noTablesForPreferences =
+        !requiresMergedTables &&
+        hasBaseSingleTable &&
+        !hasPreferenceMatchedSingleTable;
 
     function handleSelectTable(table: Table) {
         if (occupied.includes(table.id)) return;
@@ -128,16 +159,34 @@ export default function App() {
 
                         <PreferenceFilters
                             preferences={preferences}
-                            onChange={setPreferences}
+                            onChange={(next) => {
+                                setPreferences(next);
+                                setSelectedTableIds([]);
+                            }}
                         />
 
-                        {error && <div className="text-sm text-red-600">{error}</div>}
-                        {loading && <div className="text-sm text-gray-600">Loading...</div>}
+                        {error && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                {error}
+                            </div>
+                        )}
 
-                        {noTablesAvailable && (
+                        {loading && (
+                            <div className="rounded-xl border bg-white p-4 text-sm text-gray-600 shadow-sm">
+                                Loading...
+                            </div>
+                        )}
+
+                        {noTablesForSearch && !loading && !error && (
                             <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                                 No tables available for a party of {appliedPartySize} at this time.
                                 Please choose another date or time.
+                            </div>
+                        )}
+
+                        {noTablesForPreferences && !loading && !error && (
+                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                                No tables match the selected preferences. Try removing some filters.
                             </div>
                         )}
 
@@ -148,6 +197,7 @@ export default function App() {
                             recommended={recommended}
                             selectedTableIds={selectedTableIds}
                             partySize={appliedPartySize}
+                            zone={appliedZone}
                             onSelectTable={handleSelectTable}
                         />
 

@@ -32,7 +32,7 @@ export default function TableNode({
             ? "ring-2 ring-green-500"
             : occupied
                 ? "ring-2 ring-red-500"
-                : "ring-1 ring-gray-200";
+                : "ring-1 ring-slate-400 shadow";
 
     const bg = occupied ? "bg-gray-50" : "bg-white";
     const cursor = occupied || dimmed ? "cursor-not-allowed" : "cursor-pointer";

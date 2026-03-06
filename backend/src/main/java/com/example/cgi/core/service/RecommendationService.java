@@ -34,7 +34,7 @@ public class RecommendationService {
             LocalDateTime start,
             LocalDateTime end,
             Set<Preference> preferences,
-            Zone zone // null => any zone
+            Zone zone
     ) {
         List<Table> allTables = tableRepository.findAll();
         List<Booking> bookings = bookingRepository.findAll();
