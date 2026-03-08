@@ -1,7 +1,6 @@
 import TableNode from "./TableNode";
-import Legend from "./Legend";
 import Zones from "./Zones";
-import type { Table } from "../../types/table";
+import type {Table} from "../../types/table";
 
 type Props = {
     tables: Table[];
@@ -24,6 +23,9 @@ export default function FloorPlan({
                                       zone,
                                       onSelectTable,
                                   }: Props) {
+
+// Note: this search and selection state flow was refined with AI-assisted suggestions,
+// then adapted manually to fit this project's reservation flow and UI behavior.
 
     function getTableState(table: Table) {
         const isOccupied = occupied.includes(table.id);
@@ -91,13 +93,10 @@ export default function FloorPlan({
 
     return (
         <div className="space-y-3">
-            <div className="flex justify-center">
-                <Legend />
-            </div>
-
             <div className="overflow-x-auto">
                 <div className="flex min-w-[900px] justify-center">
-                    <div className="relative h-[600px] w-[900px] overflow-hidden rounded-xl border bg-slate-50 shadow-sm">
+                    <div
+                        className="relative h-[600px] w-[900px] overflow-hidden rounded-xl border bg-slate-50 shadow-sm">
                         <div
                             className="absolute inset-0 opacity-40"
                             style={{
@@ -108,7 +107,7 @@ export default function FloorPlan({
                         />
 
                         <div className="absolute inset-0">
-                            <Zones />
+                            <Zones/>
 
                             {tables.map((table) => {
                                 const state = getTableState(table);

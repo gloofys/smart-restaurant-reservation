@@ -18,6 +18,9 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Note: the initial structure of this test was drafted with AI assistance,
+// then reviewed and adapted manually to match this project's business logic and data model.
+
 class ReservationControllerTest {
 
     @Test

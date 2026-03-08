@@ -2,16 +2,16 @@
 
 A full-stack prototype for searching and visualizing restaurant table availability.
 
-Users can choose a date and party size, filter by zone and seating preferences, view the restaurant floor plan, accept a recommended table, and step through a simple booking confirmation flow.
+Users can choose a date and party size, filter by zone and seating preferences, view the restaurant floor plan, select a table, with the best option highlighted by the system, and step through a simple booking confirmation flow.
 
 ## Tech Stack
 
-- Frontend: React 19 + TypeScript + Vite
-- Styling: Tailwind CSS 4
-- Backend: Spring Boot 4
+- Frontend: React + TypeScript + Vite
+- Styling: Tailwind CSS
+- Backend: Spring Boot
 - Java runtime: Java 25
 - Reverse proxy: Nginx
-- Container orchestration: Docker Compose
+- Containers: Docker Compose
 
 ## Running the Project
 
@@ -64,9 +64,6 @@ Backend base URL:
 
 - [http://localhost:8080/api](http://localhost:8080/api)
 
-Health check:
-
-- [http://localhost:8080/api](http://localhost:8080/api)
 
 #### Frontend
 
@@ -172,19 +169,13 @@ You can also use the sample request in [`test.http`]
 
 During the booking confirmation step, the frontend fetches a random chef's offer from [TheMealDB](https://www.themealdb.com/). If that service is unavailable, the reservation flow still works, but the meal suggestion may not load.
 
-## Architecture
+## Tests
 
-```text
-React + Vite frontend
-        |
-        | POST /api/search
-        v
-Spring Boot backend
-        |
-        +-- ReservationController
-        +-- ReservationSearchService
-        +-- RecommendationService
-        +-- In-memory table and booking repositories
+Backend tests can be run with:
+
+```bash
+cd backend
+./gradlew test
 ```
 
 ## Notes
@@ -192,6 +183,9 @@ Spring Boot backend
 - The current project uses in-memory repositories, so bookings and table state reset when the backend restarts.
 - The frontend includes a group size limit for online bookings above 12 guests.
 - Nginx is used in the Docker setup to expose the frontend and backend under one host.
+
+
+  For additional implementation notes, assumptions, and MVP trade-offs, see `DECISIONS_AND_ASSUMPTIONS.md`.
 
 ## Author
 

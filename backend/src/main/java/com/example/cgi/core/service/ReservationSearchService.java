@@ -33,6 +33,8 @@ public class ReservationSearchService {
         this.bookingRepository = bookingRepository;
         this.recommendationService = recommendationService;
     }
+// Note: this service structure was refined with AI-assisted refactoring suggestions,
+//but the final implementation and project-specific logic were adapted manually.
 
     public SearchResponse search(SearchRequest request) {
         LocalDateTime start = request.start;

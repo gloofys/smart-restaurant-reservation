@@ -1,9 +1,9 @@
-import type { SearchRequest, SearchResponse } from "../../types/api";
+import type {SearchRequest, SearchResponse} from "../../types/api";
 
 export async function searchTables(payload: SearchRequest): Promise<SearchResponse> {
     const res = await fetch("/api/search", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {"Content-Type": "application/json"},
         body: JSON.stringify(payload),
     });
 

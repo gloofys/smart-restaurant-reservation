@@ -1,54 +1,54 @@
 type Props = {
     preferences: string[];
     onChange: (next: string[]) => void;
+    disabled?: boolean;
 };
 
-const PREFS = [
-    { key: "WINDOW", label: "Window" },
-    { key: "QUIET", label: "Quiet" },
-    { key: "NEAR_PLAY_AREA", label: "Near play area" },
-] as const;
+const OPTIONS = [
+    { value: "WINDOW", label: "Window" },
+    { value: "QUIET", label: "Quiet" },
+    { value: "NEAR_PLAY_AREA", label: "Near play area" },
+];
 
-export default function PreferenceFilters({ preferences, onChange }: Props) {
-    function toggle(pref: string) {
-        const next = preferences.includes(pref)
-            ? preferences.filter((p) => p !== pref)
-            : [...preferences, pref];
-        onChange(next);
-    }
-
+export default function PreferenceFilters({
+                                              preferences,
+                                              onChange,
+                                              disabled = false,
+                                          }: Props) {
     return (
-        <div className="bg-slate-50 rounded-xl p-4">
-            <div className="text-xs text-gray-600 font-medium mb-2">Preferences</div>
+        <div className="space-y-2">
+            <div className="text-xs font-medium text-gray-600">Preferences</div>
 
             <div className="flex flex-wrap gap-2">
-                {PREFS.map((p) => {
-                    const active = preferences.includes(p.key);
+                {OPTIONS.map(({ value, label }) => {
+                    const isSelected = preferences.includes(value);
+
                     return (
                         <button
-                            key={p.key}
+                            key={value}
                             type="button"
-                            onClick={() => toggle(p.key)}
-                            className={`px-3 py-1.5 rounded-full border text-sm transition ${
-                                active
-                                    ? "bg-gray-900 text-white border-gray-900"
-                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                            disabled={disabled}
+                            onClick={() => {
+                                if (disabled) return;
+
+                                if (isSelected) {
+                                    onChange(preferences.filter((p) => p !== value));
+                                } else {
+                                    onChange([...preferences, value]);
+                                }
+                            }}
+                            className={`rounded-full border px-4 py-2 text-sm transition ${
+                                disabled
+                                    ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 opacity-70"
+                                    : isSelected
+                                        ? "border-slate-900 bg-slate-900 text-white"
+                                        : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
                             }`}
                         >
-                            {p.label}
+                            {label}
                         </button>
                     );
                 })}
-
-                {preferences.length > 0 && (
-                    <button
-                        type="button"
-                        onClick={() => onChange([])}
-                        className="px-3 py-1.5 rounded-full border text-sm bg-white text-gray-500 border-gray-300 hover:bg-gray-50"
-                    >
-                        Clear
-                    </button>
-                )}
             </div>
         </div>
     );

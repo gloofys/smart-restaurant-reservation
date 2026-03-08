@@ -1,4 +1,4 @@
-import type { Table } from "../types/table";
+import type {Table} from "../types/table";
 
 type Props = {
     selectedTables: Table[];
@@ -20,7 +20,7 @@ export default function SelectionSummary({
     const hasSelection = selectedTables.length > 0;
 
     return (
-        <div className="border-t border-slate-100 bg-slate-50/70 p-6">
+        <div className="border-t border-slate-200 bg-slate-50 px-6 py-6">
             <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                 <div className="space-y-2">
 
@@ -36,17 +36,18 @@ export default function SelectionSummary({
 
                             {requiresMergedTables && (
                                 <div className="text-sm text-slate-600">
-                                    Your booking requires two combined tables. Please select both highlighted tables and we will prepare them together before you arrive.
+                                    Your booking requires two combined tables. Please select both highlighted tables to
+                                    continue.
                                 </div>
                             )}
                         </>
                     ) : (
                         <>
                             <div className="text-xl font-semibold text-slate-900">
-                                Please choose a table
+                                {requiresMergedTables ? "Please choose two tables" : "Please choose a table"}
                             </div>
 
-                            <div className="text-sm text-slate-600">
+                            <div className="mt-1 text-sm text-slate-600">
                                 {requiresMergedTables
                                     ? "Select both highlighted tables to continue."
                                     : "Select one suitable table to continue."}

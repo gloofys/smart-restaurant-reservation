@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import {useEffect, useMemo, useState} from "react";
 import FloorPlan from "./components/floorPlan/FloorPlan";
 import FilterBar from "./components/FilterBar";
 import PreferenceFilters from "./components/PreferenceFilters";
-import { searchTables } from "./components/api/api";
-import type { Table } from "./types/table";
+import {searchTables} from "./components/api/api";
+import type {Table} from "./types/table";
 import BookingConfirmationPage from "./components/pages/BookingConfirmationPage";
 import SelectionSummary from "./components/SelectionSummary";
 import BookingSuccessPage from "./components/pages/BookingSuccessPage";
+import Legend from "./components/floorPlan/Legend.tsx";
 
 type Step = "search" | "confirm" | "success";
 
@@ -69,14 +70,18 @@ export default function App() {
         void handleSearch();
     }, []);
 
-    async function handleSearch() {
+// Note: this search and reservation state flow was refined with AI-assisted suggestions,
+// then adapted manually to fit this project's reservation flow and UI behavior.
+
+    async function handleSearch(overrides?: { preferences?: string[] }) {
         if (partySizeTooLarge) {
             clearSearchResults();
             setError(null);
-            setSelectedTableIds([]);
             setStep("search");
             return;
         }
+
+        const nextPreferences = overrides?.preferences ?? preferences;
 
         setLoading(true);
         setError(null);
@@ -84,7 +89,7 @@ export default function App() {
         setStep("search");
 
         try {
-            const payload = buildSearchPayload(start, partySize, zone, preferences);
+            const payload = buildSearchPayload(start, partySize, zone, nextPreferences);
             const res = await searchTables(payload);
 
             setTables(res.availableTables);
@@ -95,7 +100,7 @@ export default function App() {
                 start,
                 partySize,
                 zone,
-                preferences,
+                preferences: nextPreferences,
             });
         } catch (e: unknown) {
             setError(getErrorMessage(e));
@@ -164,7 +169,7 @@ export default function App() {
             !occupiedSet.has(table.id) &&
             table.capacity >= appliedFilters.partySize &&
             matchesZone &&
-            tableMatchesPreferences(table, appliedFilters.preferences)
+            tableMatchesPreferences(table, preferences)
         );
     });
 
@@ -178,7 +183,7 @@ export default function App() {
         !hasPreferenceMatchedSingleTable;
 
     return (
-        <div className="min-h-screen bg-slate-50">
+        <div className="min-h-screen bg-slate-100">
             <header className="sticky top-0 z-10 border border-slate-200 bg-white/90 backdrop-blur">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                     <h1 className="text-xl font-semibold text-slate-900">
@@ -189,8 +194,8 @@ export default function App() {
 
             <main className="mx-auto max-w-6xl px-6 py-8">
                 {step === "search" && (
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                        <div className="p-6">
+                    <div className="overflow-hidden rounded-2xl border border-slate-300 bg-white shadow-md">
+                        <div className="p-6 border-b border-slate-100 bg-slate-50/60">
                             <FilterBar
                                 start={start}
                                 partySize={partySize}
@@ -204,67 +209,85 @@ export default function App() {
                             />
                         </div>
 
-                        <div className="px-6 pb-6">
+                        <div className="space-y-3 px-6 pb-6 bg-white">
                             <PreferenceFilters
                                 preferences={preferences}
+                                disabled={requiresMergedTables}
                                 onChange={(next) => {
+                                    if (requiresMergedTables) return;
                                     setPreferences(next);
                                     setSelectedTableIds([]);
+                                    void handleSearch({ preferences: next });
                                 }}
                             />
+
+                            {requiresMergedTables && !loading && !error && (
+                                <div className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-sky-700">
+                                    For this reservation, two combined tables are required, so seating preferences are
+                                    currently unavailable.
+                                </div>
+                            )}
                         </div>
 
                         {(error || loading || noTablesForSearch || noTablesForPreferences || partySizeTooLarge) && (
                             <div className="space-y-3 border-t border-slate-100 px-6 py-4">
                                 {error && (
-                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                    <div
+                                        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                                         {error}
                                     </div>
                                 )}
 
                                 {loading && (
-                                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+                                    <div
+                                        className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
                                         Loading...
                                     </div>
                                 )}
 
                                 {partySizeTooLarge && !loading && !error && (
-                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                                    <div
+                                        className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
                                         Online bookings are limited to 12 guests. For larger groups please contact
                                         us by phone or create two separate reservations.
                                     </div>
                                 )}
 
                                 {noTablesForSearch && !partySizeTooLarge && !loading && !error && (
-                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                    <div
+                                        className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                                         No tables available for a party of {appliedFilters.partySize} at this time.
                                         Please choose another date or time.
                                     </div>
                                 )}
 
                                 {noTablesForPreferences && !partySizeTooLarge && !loading && !error && (
-                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                                    <div
+                                        className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
                                         No tables match the selected preferences. Try removing some filters.
                                     </div>
                                 )}
                             </div>
                         )}
-
                         <div className="space-y-4 border-t border-slate-100 p-6">
-                            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
                                 <div>
-                                    <h2 className="text-lg font-semibold text-slate-900">
+                                    <h2 className="text-xl font-semibold text-slate-900">
                                         Floor plan
                                     </h2>
                                     <p className="text-sm text-slate-500">
                                         Choose the most suitable table for your reservation.
                                     </p>
                                 </div>
+
+                                <div className="md:shrink-0">
+                                    <Legend />
+                                </div>
                             </div>
 
                             <FloorPlan
                                 tables={tables}
-                                preferences={appliedFilters.preferences}
+                                preferences={preferences}
                                 occupied={occupied}
                                 recommended={recommended}
                                 selectedTableIds={selectedTableIds}
@@ -292,7 +315,7 @@ export default function App() {
                         selectedTables={selectedTables}
                         onBack={() => setStep("search")}
                         onConfirm={(payload) => {
-                            setConfirmedExtras(payload ?? { extrasTotal: 0 });
+                            setConfirmedExtras(payload ?? {extrasTotal: 0});
                             setStep("success");
                         }}
                     />

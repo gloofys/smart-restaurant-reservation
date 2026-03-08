@@ -1,4 +1,4 @@
-import type { Table } from "../../types/table";
+import type {Table} from "../../types/table";
 
 type Props = {
     table: Table;
@@ -10,10 +10,10 @@ type Props = {
 };
 
 function getDims(capacity: number) {
-    if (capacity <= 2) return { w: 46, h: 46, shape: "round" as const };
-    if (capacity <= 4) return { w: 58, h: 58, shape: "square" as const };
-    if (capacity <= 6) return { w: 78, h: 58, shape: "rect" as const };
-    return { w: 90, h: 66, shape: "rect" as const };
+    if (capacity <= 2) return {w: 46, h: 46, shape: "round" as const};
+    if (capacity <= 4) return {w: 58, h: 58, shape: "square" as const};
+    if (capacity <= 6) return {w: 78, h: 58, shape: "rect" as const};
+    return {w: 90, h: 66, shape: "rect" as const};
 }
 
 export default function TableNode({
@@ -24,7 +24,7 @@ export default function TableNode({
                                       dimmed,
                                       onSelect,
                                   }: Props) {
-    const { w, h, shape } = getDims(table.capacity);
+    const {w, h, shape} = getDims(table.capacity);
 
     const ring = selected
         ? "ring-4 ring-blue-500 border-blue-500 shadow-xl z-20"
@@ -32,12 +32,12 @@ export default function TableNode({
             ? "ring-2 ring-green-500"
             : occupied
                 ? "ring-2 ring-red-500"
-                : "ring-1 ring-slate-400 shadow";
+                : "ring-1 ring-slate-500 shadow-sm";
 
-    const bg = occupied ? "bg-gray-50" : "bg-white";
+    const bg = occupied ? "bg-slate-50" : "bg-white";
     const cursor = occupied || dimmed ? "cursor-not-allowed" : "cursor-pointer";
 
-    const opacity = dimmed ? "opacity-20" : occupied ? "opacity-70" : "opacity-100";
+    const opacity = dimmed ? "opacity-25" : occupied ? "opacity-75" : "opacity-100";
     const blur = dimmed ? "blur-[1px]" : "";
     const scale = selected ? "scale-110" : recommended ? "scale-105" : "scale-100";
 
@@ -66,15 +66,18 @@ export default function TableNode({
             </div>
 
             {selected ? (
-                <div className="absolute -top-2 -right-2 rounded-full bg-blue-600 text-white text-[10px] px-2 py-0.5 shadow">
+                <div
+                    className="absolute -top-2 -right-2 rounded-full bg-blue-600 text-white text-[10px] px-2 py-0.5 shadow">
                     Selected
                 </div>
             ) : recommended && !occupied ? (
-                <div className="absolute -top-2 -right-2 rounded-full bg-green-600 text-white text-[10px] px-2 py-0.5 shadow">
+                <div
+                    className="absolute -top-2 -right-2 rounded-full bg-green-600 text-white text-[10px] px-2 py-0.5 shadow">
                     Best
                 </div>
             ) : occupied ? (
-                <div className="absolute -top-2 -right-2 rounded-full bg-red-600 text-white text-[10px] px-2 py-0.5 shadow">
+                <div
+                    className="absolute -top-2 -right-2 rounded-full bg-red-600 text-white text-[10px] px-2 py-0.5 shadow">
                     Busy
                 </div>
             ) : null}

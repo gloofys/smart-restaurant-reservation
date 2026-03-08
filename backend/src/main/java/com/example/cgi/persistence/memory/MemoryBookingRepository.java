@@ -73,6 +73,10 @@ public class MemoryBookingRepository implements BookingRepository {
         }
     }
 
+
+    // Note: this service structure was refined with AI-assisted refactoring suggestions,
+//but the final implementation and project-specific logic were adapted manually.
+
     private int realisticPartySize(int capacity) {
         int[] weights;
         int[] sizes;

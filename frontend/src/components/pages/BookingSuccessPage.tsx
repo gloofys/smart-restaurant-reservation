@@ -23,7 +23,8 @@ export default function BookingSuccessPage({
         <div className="mx-auto max-w-4xl">
             <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                 <div className="p-8 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">
+                    <div
+                        className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-3xl text-green-700">
                         ✓
                     </div>
 

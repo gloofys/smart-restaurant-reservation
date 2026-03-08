@@ -33,11 +33,13 @@ export const ZONES: ZoneBox[] = [
         height: 200,
         color: "bg-purple-50"
     },
-    {   name: "Play Area",
+    {
+        name: "Play Area",
         x: 70,
         y: 470,
         width: 140,
         height: 110,
         color: "bg-yellow-50",
-        kind: "FEATURE" },
+        kind: "FEATURE"
+    },
 ];
