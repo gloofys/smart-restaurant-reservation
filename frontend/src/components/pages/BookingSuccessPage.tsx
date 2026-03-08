@@ -1,3 +1,5 @@
+import {formatDateTime} from "../helpers/formatDateTime.ts";
+
 type Props = {
     start: string;
     partySize: number;
@@ -43,7 +45,7 @@ export default function BookingSuccessPage({
                         <div className="space-y-3 text-sm">
                             <div className="flex items-center justify-between">
                                 <span className="text-slate-500">Date & time</span>
-                                <span className="font-medium text-slate-900">{start}</span>
+                                <span className="font-medium text-slate-900">{formatDateTime(start)}</span>
                             </div>
 
                             <div className="flex items-center justify-between">

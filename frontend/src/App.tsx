@@ -37,8 +37,12 @@ export default function App() {
     } | null>(null);
 
     const requiresMergedTables = appliedPartySize >= 9;
+    const partySizeTooLarge = partySize > 12;
 
     async function handleSearch() {
+        if (partySize > 12) {
+            return;
+        }
         setLoading(true);
         setError(null);
         setSelectedTableIds([]);
@@ -139,7 +143,7 @@ export default function App() {
 
     return (
         <div className="min-h-screen bg-slate-50">
-            <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
+            <header className="sticky top-0 z-10 border border-slate-200 bg-white/90 backdrop-blur">
                 <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
                     <h1 className="text-xl font-semibold text-slate-900">
                         Smart Restaurant Booking
@@ -149,7 +153,7 @@ export default function App() {
 
             <main className="mx-auto max-w-6xl px-6 py-8">
                 {step === "search" && (
-                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                    <div className="overflow-hidden rounded-2xl border-gray-500 border-slate-200 bg-white shadow-sm">
                         <div className="p-6">
                             <FilterBar
                                 start={start}
@@ -174,7 +178,7 @@ export default function App() {
                             />
                         </div>
 
-                        {(error || loading || noTablesForSearch || noTablesForPreferences) && (
+                        {(error || loading || noTablesForSearch || noTablesForPreferences || partySizeTooLarge) && (
                             <div className="border-t border-slate-100 px-6 py-4 space-y-3">
                                 {error && (
                                     <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
@@ -198,6 +202,13 @@ export default function App() {
                                 {noTablesForPreferences && !loading && !error && (
                                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
                                         No tables match the selected preferences. Try removing some filters.
+                                    </div>
+                                )}
+
+                                {partySizeTooLarge && !loading && (
+                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                                        Online bookings are limited to 12 guests. For larger groups please contact
+                                        us by phone or create two separate reservations.
                                     </div>
                                 )}
                             </div>

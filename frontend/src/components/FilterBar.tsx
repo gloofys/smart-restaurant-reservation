@@ -21,9 +21,9 @@ export default function FilterBar({
                     type="datetime-local"
                     value={start}
                     step={1800}
-                    min="2026-01-01T10:00"
-                    max="2026-12-31T22:00"
-                    onChange={(e) => onChange({ start: e.target.value })}
+                    min="2026-03-08T10:00"
+                    max="2026-06-31T22:00"
+                    onChange={(e) => onChange({start: e.target.value})}
                     className="border rounded-lg px-3 py-2"
                 />
             </div>
@@ -33,9 +33,9 @@ export default function FilterBar({
                 <input
                     type="number"
                     min={1}
-                    max={20}
+                    max={12}
                     value={partySize}
-                    onChange={(e) => onChange({ partySize: Number(e.target.value) })}
+                    onChange={(e) => onChange({partySize: Number(e.target.value)})}
                     className="border rounded-lg px-3 py-2 w-32"
                 />
             </div>
@@ -44,7 +44,7 @@ export default function FilterBar({
                 <label className="text-xs text-gray-600 font-medium">Zone</label>
                 <select
                     value={zone}
-                    onChange={(e) => onChange({ zone: e.target.value })}
+                    onChange={(e) => onChange({zone: e.target.value})}
                     className="border rounded-lg px-3 py-2 w-44"
                 >
                     <option value="ANY">All zones</option>

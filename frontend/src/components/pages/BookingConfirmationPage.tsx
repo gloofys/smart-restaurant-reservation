@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { getRandomMeal, type Meal } from "../api/mealApi";
 import type { Table } from "../../types/table";
+import {formatDateTime} from "../helpers/formatDateTime.ts";
 
 type Props = {
     start: string;
@@ -101,7 +102,7 @@ export default function BookingConfirmationPage({
     const isAdded = addedOffer?.mealId === meal?.idMeal;
 
     return (
-            <div className="rounded-xl border bg-white p-6 shadow-sm space-y-6">
+            <div className="rounded-xl border-gray-200 bg-white p-6 shadow-sm space-y-6">
                 <div>
                     <h2 className="text-2xl font-semibold">Booking confirmation</h2>
                     <p className="text-sm text-gray-500">
@@ -114,16 +115,16 @@ export default function BookingConfirmationPage({
 
                     <div className="grid gap-3 rounded-lg bg-gray-50 p-4 text-sm sm:grid-cols-2">
                         <div>
-                            <span className="font-medium">Date & time:</span> {start}
+                            <span className="font-medium">Date & time:</span> {formatDateTime(start)}
                         </div>
                         <div>
                             <span className="font-medium">Party size:</span> {partySize}
                         </div>
                         <div>
-                            <span className="font-medium">Table:</span> {selectedTables.map((t) => t.id).join(", ")}
+                            <span className="font-medium">Table:</span> T{selectedTables.map((t) => t.id).join(", T")}
                         </div>
                         <div>
-                            <span className="font-medium">Total capacity:</span> {totalCapacity}
+                            <span className="font-medium">Table size:</span> {totalCapacity} seats
                         </div>
                     </div>
                 </section>
