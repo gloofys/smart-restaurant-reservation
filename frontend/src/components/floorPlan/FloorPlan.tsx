@@ -24,12 +24,13 @@ export default function FloorPlan({
                                       zone,
                                       onSelectTable,
                                   }: Props) {
-    const requiresMergedTables = partySize >= 9;
 
     function getTableState(table: Table) {
         const isOccupied = occupied.includes(table.id);
         const isSelected = selectedTableIds.includes(table.id);
         const isRecommended = recommended.includes(table.id);
+
+        const requiresMergedTables = recommended.length === 2;
 
         const tooSmall = !requiresMergedTables && table.capacity < partySize;
 
@@ -49,17 +50,7 @@ export default function FloorPlan({
             };
         }
 
-        if (requiresMergedTables) {
-            if (!isRecommended) {
-                return {
-                    occupied: false,
-                    recommended: false,
-                    selected: false,
-                    dimmed: true,
-                    disabled: true,
-                };
-            }
-
+        if (isRecommended) {
             return {
                 occupied: false,
                 recommended: true,
@@ -69,10 +60,20 @@ export default function FloorPlan({
             };
         }
 
+        if (requiresMergedTables) {
+            return {
+                occupied: false,
+                recommended: false,
+                selected: false,
+                dimmed: true,
+                disabled: true,
+            };
+        }
+
         if (tooSmall || !matchesPreferences || !matchesZone) {
             return {
                 occupied: false,
-                recommended: isRecommended,
+                recommended: false,
                 selected: isSelected,
                 dimmed: true,
                 disabled: true,
@@ -81,7 +82,7 @@ export default function FloorPlan({
 
         return {
             occupied: false,
-            recommended: isRecommended,
+            recommended: false,
             selected: isSelected,
             dimmed: false,
             disabled: false,

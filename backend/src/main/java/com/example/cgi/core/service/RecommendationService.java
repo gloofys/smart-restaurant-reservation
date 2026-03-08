@@ -4,8 +4,6 @@ import com.example.cgi.core.domain.Booking;
 import com.example.cgi.core.domain.Preference;
 import com.example.cgi.core.domain.Table;
 import com.example.cgi.core.domain.Zone;
-import com.example.cgi.persistence.repository.BookingRepository;
-import com.example.cgi.persistence.repository.TableRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -14,26 +12,20 @@ import java.util.stream.Collectors;
 
 @Service
 public class RecommendationService {
-    private final TableRepository tableRepository;
-    private final BookingRepository bookingRepository;
 
-    public RecommendationService(TableRepository tableRepository,
-                                 BookingRepository bookingRepository) {
-        this.tableRepository = tableRepository;
-        this.bookingRepository = bookingRepository;
-    }
+    private static final int PREFERENCE_MATCH_SCORE = 5;
+    private static final int MERGED_TABLE_PENALTY = 2;
 
     public List<Long> recommendTables(
+            List<Table> tables,
+            List<Booking> bookings,
             int partySize,
             LocalDateTime start,
             LocalDateTime end,
             Set<Preference> preferences,
             Zone zone
     ) {
-        List<Table> allTables = tableRepository.findAll();
-        List<Booking> bookings = bookingRepository.findAll();
-
-        List<Table> available = allTables.stream()
+        List<Table> available = tables.stream()
                 .filter(t -> zone == null || t.getZone() == zone)
                 .filter(t -> isAvailable(t, bookings, start, end))
                 .toList();
@@ -53,17 +45,18 @@ public class RecommendationService {
 
     private boolean isAvailable(Table table, List<Booking> bookings, LocalDateTime start, LocalDateTime end) {
         return bookings.stream()
-                .filter(b -> Objects.equals(b.getTableId(), table.getId())) // IMPORTANT: equals for Long
+                .filter(b -> Objects.equals(b.getTableId(), table.getId()))
                 .noneMatch(b -> b.overlaps(start, end));
     }
 
     private int scoreSingle(Table table, int partySize, Set<Preference> preferences) {
         int score = 0;
-
         score -= (table.getCapacity() - partySize);
 
         for (Preference p : preferences) {
-            if (table.getPreferences().contains(p)) score += 5;
+            if (table.getPreferences().contains(p)) {
+                score += PREFERENCE_MATCH_SCORE;
+            }
         }
 
         return score;
@@ -73,15 +66,15 @@ public class RecommendationService {
         int totalCapacity = a.getCapacity() + b.getCapacity();
 
         int score = 0;
-
         score -= (totalCapacity - partySize);
 
         for (Preference p : preferences) {
-            if (a.getPreferences().contains(p) || b.getPreferences().contains(p)) score += 5;
+            if (a.getPreferences().contains(p) || b.getPreferences().contains(p)) {
+                score += PREFERENCE_MATCH_SCORE;
+            }
         }
 
-        score -= 2;
-
+        score -= MERGED_TABLE_PENALTY;
         return score;
     }
 
@@ -96,7 +89,6 @@ public class RecommendationService {
             for (Long otherId : t1.getMergeableWith()) {
                 Table t2 = byId.get(otherId);
                 if (t2 == null) continue;
-
                 if (t1.getId() > t2.getId()) continue;
 
                 int totalCapacity = t1.getCapacity() + t2.getCapacity();

@@ -1,28 +1,56 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import FloorPlan from "./components/floorPlan/FloorPlan";
 import FilterBar from "./components/FilterBar";
 import PreferenceFilters from "./components/PreferenceFilters";
 import { searchTables } from "./components/api/api";
 import type { Table } from "./types/table";
 import BookingConfirmationPage from "./components/pages/BookingConfirmationPage";
-import SelectionSummary from "./components/SelectionSummary.tsx";
-import BookingSuccessPage from "./components/pages/BookingSuccessPage.tsx";
+import SelectionSummary from "./components/SelectionSummary";
+import BookingSuccessPage from "./components/pages/BookingSuccessPage";
 
 type Step = "search" | "confirm" | "success";
+
+type SearchPayload = {
+    start: string;
+    partySize: number;
+    zone?: string;
+    preferences?: string[];
+};
+
+type ConfirmedExtras = {
+    mealName?: string;
+    quantity?: number;
+    extrasTotal: number;
+};
+
+type AppliedFilters = {
+    start: string;
+    partySize: number;
+    zone: string;
+    preferences: string[];
+};
+
+const INITIAL_START = "2026-03-05T19:00";
+const INITIAL_PARTY_SIZE = 3;
+const INITIAL_ZONE = "ANY";
+const MAX_ONLINE_PARTY_SIZE = 12;
 
 export default function App() {
     const [tables, setTables] = useState<Table[]>([]);
     const [occupied, setOccupied] = useState<number[]>([]);
     const [recommended, setRecommended] = useState<number[]>([]);
 
-    const [start, setStart] = useState("2026-03-05T19:00");
-    const [partySize, setPartySize] = useState(3);
-    const [zone, setZone] = useState("ANY");
+    const [start, setStart] = useState(INITIAL_START);
+    const [partySize, setPartySize] = useState(INITIAL_PARTY_SIZE);
+    const [zone, setZone] = useState(INITIAL_ZONE);
     const [preferences, setPreferences] = useState<string[]>([]);
 
-    const [appliedStart, setAppliedStart] = useState("2026-03-05T19:00");
-    const [appliedPartySize, setAppliedPartySize] = useState(3);
-    const [appliedZone, setAppliedZone] = useState("ANY");
+    const [appliedFilters, setAppliedFilters] = useState<AppliedFilters>({
+        start: INITIAL_START,
+        partySize: INITIAL_PARTY_SIZE,
+        zone: INITIAL_ZONE,
+        preferences: [],
+    });
 
     const [selectedTableIds, setSelectedTableIds] = useState<number[]>([]);
     const [step, setStep] = useState<Step>("search");
@@ -30,82 +58,113 @@ export default function App() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const [confirmedExtras, setConfirmedExtras] = useState<{
-        mealName?: string;
-        quantity?: number;
-        extrasTotal: number;
-    } | null>(null);
+    const [confirmedExtras, setConfirmedExtras] = useState<ConfirmedExtras | null>(null);
 
-    const requiresMergedTables = appliedPartySize >= 9;
-    const partySizeTooLarge = partySize > 12;
+    const occupiedSet = useMemo(() => new Set(occupied), [occupied]);
+
+    const requiresMergedTables = recommended.length === 2;
+    const partySizeTooLarge = partySize > MAX_ONLINE_PARTY_SIZE;
+
+    useEffect(() => {
+        void handleSearch();
+    }, []);
 
     async function handleSearch() {
-        if (partySize > 12) {
+        if (partySizeTooLarge) {
+            clearSearchResults();
+            setError(null);
+            setSelectedTableIds([]);
+            setStep("search");
             return;
         }
+
         setLoading(true);
         setError(null);
         setSelectedTableIds([]);
         setStep("search");
 
         try {
-            const payload: any = {
-                start: normalizeDatetimeLocal(start),
-                partySize,
-            };
-
-            if (zone !== "ANY") payload.zone = zone;
-            if (preferences.length > 0) payload.preferences = preferences;
-
+            const payload = buildSearchPayload(start, partySize, zone, preferences);
             const res = await searchTables(payload);
 
             setTables(res.availableTables);
             setOccupied(res.occupiedTableIDs);
             setRecommended(res.recommendedTableIDs);
 
-            setAppliedStart(start);
-            setAppliedPartySize(partySize);
-            setAppliedZone(zone);
-        } catch (e: any) {
-            setError(e.message ?? "Search failed");
+            setAppliedFilters({
+                start,
+                partySize,
+                zone,
+                preferences,
+            });
+        } catch (e: unknown) {
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }
     }
 
-    useEffect(() => {
-        handleSearch();
-    }, []);
+    function clearSearchResults() {
+        setTables([]);
+        setOccupied([]);
+        setRecommended([]);
+        setSelectedTableIds([]);
+    }
 
-    const selectedTables = tables.filter((t) => selectedTableIds.includes(t.id));
-    const selectedCapacity = selectedTables.reduce((sum, t) => sum + t.capacity, 0);
+    function handleSelectTable(table: Table) {
+        if (occupiedSet.has(table.id)) return;
+
+        if (requiresMergedTables) {
+            handleMergedTableSelection(table.id);
+            return;
+        }
+
+        setSelectedTableIds([table.id]);
+    }
+
+    function handleMergedTableSelection(tableId: number) {
+        const isAllowed = recommended.includes(tableId);
+        if (!isAllowed) return;
+
+        const isAlreadySelected = selectedTableIds.includes(tableId);
+
+        if (isAlreadySelected) {
+            setSelectedTableIds((prev) => prev.filter((id) => id !== tableId));
+            return;
+        }
+
+        if (selectedTableIds.length === 2) return;
+
+        setSelectedTableIds((prev) => [...prev, tableId]);
+    }
+
+    const selectedTables = tables.filter((table) => selectedTableIds.includes(table.id));
+    const selectedCapacity = selectedTables.reduce((sum, table) => sum + table.capacity, 0);
 
     const canContinue = requiresMergedTables
         ? selectedTableIds.length === 2
         : selectedTableIds.length === 1;
 
     const hasBaseSingleTable = tables.some((table) => {
-        const matchesZone = appliedZone === "ANY" || table.zone === appliedZone;
+        const matchesZone =
+            appliedFilters.zone === INITIAL_ZONE || table.zone === appliedFilters.zone;
 
         return (
-            !occupied.includes(table.id) &&
-            table.capacity >= appliedPartySize &&
+            !occupiedSet.has(table.id) &&
+            table.capacity >= appliedFilters.partySize &&
             matchesZone
         );
     });
 
     const hasPreferenceMatchedSingleTable = tables.some((table) => {
-        const matchesZone = appliedZone === "ANY" || table.zone === appliedZone;
-
-        const matchesPreferences =
-            preferences.length === 0 ||
-            preferences.every((p) => (table.preferences ?? []).includes(p));
+        const matchesZone =
+            appliedFilters.zone === INITIAL_ZONE || table.zone === appliedFilters.zone;
 
         return (
-            !occupied.includes(table.id) &&
-            table.capacity >= appliedPartySize &&
+            !occupiedSet.has(table.id) &&
+            table.capacity >= appliedFilters.partySize &&
             matchesZone &&
-            matchesPreferences
+            tableMatchesPreferences(table, appliedFilters.preferences)
         );
     });
 
@@ -117,29 +176,6 @@ export default function App() {
         !requiresMergedTables &&
         hasBaseSingleTable &&
         !hasPreferenceMatchedSingleTable;
-
-    function handleSelectTable(table: Table) {
-        if (occupied.includes(table.id)) return;
-
-        if (!requiresMergedTables) {
-            setSelectedTableIds([table.id]);
-            return;
-        }
-
-        const isAllowed = recommended.includes(table.id);
-        if (!isAllowed) return;
-
-        const isAlreadySelected = selectedTableIds.includes(table.id);
-
-        if (isAlreadySelected) {
-            setSelectedTableIds((prev) => prev.filter((id) => id !== table.id));
-            return;
-        }
-
-        if (selectedTableIds.length === 2) return;
-
-        setSelectedTableIds((prev) => [...prev, table.id]);
-    }
 
     return (
         <div className="min-h-screen bg-slate-50">
@@ -153,7 +189,7 @@ export default function App() {
 
             <main className="mx-auto max-w-6xl px-6 py-8">
                 {step === "search" && (
-                    <div className="overflow-hidden rounded-2xl border-gray-500 border-slate-200 bg-white shadow-sm">
+                    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
                         <div className="p-6">
                             <FilterBar
                                 start={start}
@@ -179,7 +215,7 @@ export default function App() {
                         </div>
 
                         {(error || loading || noTablesForSearch || noTablesForPreferences || partySizeTooLarge) && (
-                            <div className="border-t border-slate-100 px-6 py-4 space-y-3">
+                            <div className="space-y-3 border-t border-slate-100 px-6 py-4">
                                 {error && (
                                     <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
                                         {error}
@@ -192,29 +228,29 @@ export default function App() {
                                     </div>
                                 )}
 
-                                {noTablesForSearch && !loading && !error && (
-                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-                                        No tables available for a party of {appliedPartySize} at this time.
-                                        Please choose another date or time.
-                                    </div>
-                                )}
-
-                                {noTablesForPreferences && !loading && !error && (
-                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
-                                        No tables match the selected preferences. Try removing some filters.
-                                    </div>
-                                )}
-
-                                {partySizeTooLarge && !loading && (
+                                {partySizeTooLarge && !loading && !error && (
                                     <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
                                         Online bookings are limited to 12 guests. For larger groups please contact
                                         us by phone or create two separate reservations.
                                     </div>
                                 )}
+
+                                {noTablesForSearch && !partySizeTooLarge && !loading && !error && (
+                                    <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+                                        No tables available for a party of {appliedFilters.partySize} at this time.
+                                        Please choose another date or time.
+                                    </div>
+                                )}
+
+                                {noTablesForPreferences && !partySizeTooLarge && !loading && !error && (
+                                    <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-700">
+                                        No tables match the selected preferences. Try removing some filters.
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                        <div className="border-t border-slate-100 p-6 space-y-4">
+                        <div className="space-y-4 border-t border-slate-100 p-6">
                             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                                 <div>
                                     <h2 className="text-lg font-semibold text-slate-900">
@@ -224,20 +260,20 @@ export default function App() {
                                         Choose the most suitable table for your reservation.
                                     </p>
                                 </div>
-
                             </div>
 
                             <FloorPlan
                                 tables={tables}
-                                preferences={preferences}
+                                preferences={appliedFilters.preferences}
                                 occupied={occupied}
                                 recommended={recommended}
                                 selectedTableIds={selectedTableIds}
-                                partySize={appliedPartySize}
-                                zone={appliedZone}
+                                partySize={appliedFilters.partySize}
+                                zone={appliedFilters.zone}
                                 onSelectTable={handleSelectTable}
                             />
                         </div>
+
                         <SelectionSummary
                             selectedTables={selectedTables}
                             selectedCapacity={selectedCapacity}
@@ -251,8 +287,8 @@ export default function App() {
 
                 {step === "confirm" && selectedTables.length > 0 && (
                     <BookingConfirmationPage
-                        start={appliedStart}
-                        partySize={appliedPartySize}
+                        start={appliedFilters.start}
+                        partySize={appliedFilters.partySize}
                         selectedTables={selectedTables}
                         onBack={() => setStep("search")}
                         onConfirm={(payload) => {
@@ -261,11 +297,12 @@ export default function App() {
                         }}
                     />
                 )}
+
                 {step === "success" && selectedTables.length > 0 && (
                     <BookingSuccessPage
-                        start={appliedStart}
-                        partySize={appliedPartySize}
-                        tableLabel={selectedTables.map((t) => `Table ${t.id}`).join(" + ")}
+                        start={appliedFilters.start}
+                        partySize={appliedFilters.partySize}
+                        tableLabel={selectedTables.map((table) => `Table ${table.id}`).join(" + ")}
                         mealName={confirmedExtras?.mealName}
                         mealQuantity={confirmedExtras?.quantity}
                         extrasTotal={confirmedExtras?.extrasTotal}
@@ -281,6 +318,43 @@ export default function App() {
     );
 }
 
-function normalizeDatetimeLocal(v: string) {
-    return v.length === 16 ? `${v}:00` : v;
+function buildSearchPayload(
+    start: string,
+    partySize: number,
+    zone: string,
+    preferences: string[]
+): SearchPayload {
+    const payload: SearchPayload = {
+        start: normalizeDatetimeLocal(start),
+        partySize,
+    };
+
+    if (zone !== INITIAL_ZONE) {
+        payload.zone = zone;
+    }
+
+    if (preferences.length > 0) {
+        payload.preferences = preferences;
+    }
+
+    return payload;
+}
+
+function tableMatchesPreferences(table: Table, preferences: string[]) {
+    return (
+        preferences.length === 0 ||
+        preferences.every((preference) => (table.preferences ?? []).includes(preference))
+    );
+}
+
+function normalizeDatetimeLocal(value: string) {
+    return value.length === 16 ? `${value}:00` : value;
+}
+
+function getErrorMessage(error: unknown) {
+    if (error instanceof Error) {
+        return error.message;
+    }
+
+    return "Search failed";
 }

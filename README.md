@@ -1,30 +1,30 @@
 # Smart Restaurant Reservation System
 
-A small full-stack prototype for a smart restaurant reservation system.
+A full-stack prototype for searching and visualizing restaurant table availability.
 
-The application recommends suitable tables for a given party size and time, and allows users to visualize table availability on an interactive restaurant floor plan.
+Users can choose a date and party size, filter by zone and seating preferences, view the restaurant floor plan, accept a recommended table, and step through a simple booking confirmation flow.
 
-The system is implemented using:
+## Tech Stack
 
-- React + TypeScript frontend
-- Spring Boot (Java 21) backend
-- Nginx reverse proxy
-- Docker Compose for running the full stack
+- Frontend: React 19 + TypeScript + Vite
+- Styling: Tailwind CSS 4
+- Backend: Spring Boot 4
+- Java runtime: Java 25
+- Reverse proxy: Nginx
+- Container orchestration: Docker Compose
 
----
+## Running the Project
 
-# Running the Project
+### Option 1: Docker Compose
 
-## Option 1 — Run with Docker (Recommended)
+Recommended for running the full stack behind Nginx.
 
-### Requirements
-
-Make sure the following are installed:
+#### Requirements
 
 - Docker
 - Docker Compose
 
-### Start the application
+#### Start
 
 From the project root:
 
@@ -32,36 +32,50 @@ From the project root:
 docker compose up --build
 ```
 
-After the containers start:
+#### URLs
 
-Frontend  
-http://localhost
+- App: [http://localhost](http://localhost)
+- Backend API through Nginx: [http://localhost/api](http://localhost/api)
+- Backend container port: [http://localhost:8080/api](http://localhost:8080/api)
 
-Backend API  
-http://localhost/api
+### Option 2: Run Locally Without Docker
 
----
+#### Backend
 
-## Option 2 — Run without Docker
+Requirements:
 
-### Start the Backend
+- Java 25
 
-Navigate to the backend directory and run the Spring Boot application:
+Start the backend:
 
 ```bash
 cd backend
 ./gradlew bootRun
 ```
 
-Backend will run on:
+On Windows:
 
-http://localhost:8080
+```powershell
+cd backend
+.\gradlew.bat bootRun
+```
 
----
+Backend base URL:
 
-### Start the Frontend
+- [http://localhost:8080/api](http://localhost:8080/api)
 
-Navigate to the frontend directory and start the React application:
+Health check:
+
+- [http://localhost:8080/api](http://localhost:8080/api)
+
+#### Frontend
+
+Requirements:
+
+- Node.js 20 or newer
+- npm
+
+Start the frontend:
 
 ```bash
 cd frontend
@@ -69,89 +83,119 @@ npm install
 npm run dev
 ```
 
-Frontend will run on:
+Frontend URL:
 
-http://localhost:5173
+- [http://localhost:5173](http://localhost:5173)
 
----
+Note: when running the frontend separately from Nginx, API calls still target `/api/search`, so you may need a local proxy or run the stack through Docker Compose for the smoothest experience.
 
-# Project Overview
+## Features
 
-The application allows users to:
+- Search for tables by date/time and party size
+- Filter by restaurant zone
+- Apply seating preferences
+- Visualize availability on an interactive floor plan
+- Highlight recommended tables
+- Recommend merged adjacent tables when one table is not enough
+- Confirm a booking in a dedicated summary screen
+- Show an optional chef's offer during confirmation
 
-- search for available tables
-- filter results by party size, zone, and preferences
-- visualize tables on a restaurant floor plan
-- receive recommended tables
-- confirm reservations
+### Table States
 
-Tables on the floor plan are visually distinguished as:
+| State | Meaning |
+| --- | --- |
+| Available | The table is visible and not occupied for the selected time |
+| Occupied | The table already has an overlapping booking |
+| Recommended | The backend considers this the best fit for the request |
+| Selected | The user has picked this table for the reservation |
 
-| State | Description |
-|------|------|
-| Available | Free table |
-| Occupied | Already booked |
-| Recommended | Best match for the search |
-| Selected | Table chosen by the user |
+## Project Structure
 
----
+```text
+.
+|- frontend/   React application and floor plan UI
+|- backend/    Spring Boot API and recommendation logic
+|- nginx/      Reverse proxy configuration
+|- test.http   Example API request
+\- docker-compose.yml
+```
 
-# Table Recommendation Logic
+## How It Works
 
-The backend recommends tables based on:
+### Recommendation Logic
+
+The backend recommendation service scores available tables using:
 
 - party size
 - table capacity
 - seating preferences
-- table availability
+- zone filter
+- time overlap with existing bookings
 
-The system attempts to maximize seating efficiency, meaning that smaller groups are placed at appropriately sized tables when possible.
+Smaller groups are favored toward tables that fit more tightly, so the system avoids wasting large tables when a better-sized option exists.
 
-Example:
+### Combined Tables
 
-| Party Size | Table | Result |
-|------|------|------|
-| 2 | Table (2 seats) | Ideal |
-| 2 | Table (8 seats) | Not recommended |
+If no single table can seat the whole party, the backend can recommend a pair of mergeable tables.
 
----
+Rules:
 
-# Dynamic Table Combination
+- both tables must be available
+- both tables must belong to the same zone
+- the pair must be marked as mergeable in the table data
+- the combined capacity must be large enough for the group
 
-If the party size is larger than any single table, the system can recommend two adjacent tables that can be combined.
+## API
 
-Rules for combining tables:
+### Search Tables
 
-- tables must be in the same zone
-- tables must be physically adjacent
-- combined capacity must fit the group
+Endpoint:
 
-Example:
-
-Party size: 10  
-Recommended: Table 11 (6 seats) + Table 12 (6 seats)
-
----
-
-# Architecture
-
-```
-React (Frontend)
-       |
-       | REST API
-       v
-Spring Boot (Backend)
-       |
-       +-- Table Repository
-       +-- Booking Repository
-       +-- Recommendation Service
+```http
+POST /api/search
+Content-Type: application/json
 ```
 
----
+Example request:
 
-# Author
+```json
+{
+  "start": "2026-03-05T19:00:00",
+  "partySize": 4,
+  "zone": "TERRACE"
+}
+```
+
+You can also use the sample request in [`test.http`]
+
+## External Dependency
+
+During the booking confirmation step, the frontend fetches a random chef's offer from [TheMealDB](https://www.themealdb.com/). If that service is unavailable, the reservation flow still works, but the meal suggestion may not load.
+
+## Architecture
+
+```text
+React + Vite frontend
+        |
+        | POST /api/search
+        v
+Spring Boot backend
+        |
+        +-- ReservationController
+        +-- ReservationSearchService
+        +-- RecommendationService
+        +-- In-memory table and booking repositories
+```
+
+## Notes
+
+- The current project uses in-memory repositories, so bookings and table state reset when the backend restarts.
+- The frontend includes a group size limit for online bookings above 12 guests.
+- Nginx is used in the Docker setup to expose the frontend and backend under one host.
+
+## Author
 
 Fred Brosman  
-TalTech – Smart Systems and Applied Information Technology
+TalTech - Smart Systems and Applied Information Technology
 
 Created as part of the CGI Summer Internship application assignment.

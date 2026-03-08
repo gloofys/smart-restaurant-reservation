@@ -36,7 +36,7 @@ export default function SelectionSummary({
 
                             {requiresMergedTables && (
                                 <div className="text-sm text-slate-600">
-                                    For parties of 9+, please choose both highlighted tables. We will merge them together before you arrive.
+                                    Your booking requires two combined tables. Please select both highlighted tables and we will prepare them together before you arrive.
                                 </div>
                             )}
                         </>

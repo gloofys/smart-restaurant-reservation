@@ -7,6 +7,7 @@ import com.example.cgi.core.domain.Preference;
 import com.example.cgi.core.domain.Table;
 import com.example.cgi.core.domain.Zone;
 import com.example.cgi.core.service.RecommendationService;
+import com.example.cgi.core.service.ReservationSearchService;
 import com.example.cgi.persistence.repository.BookingRepository;
 import com.example.cgi.persistence.repository.TableRepository;
 import org.junit.jupiter.api.Test;
@@ -37,11 +38,13 @@ class ReservationControllerTest {
 
         FakeRecommendationService recommendationService = new FakeRecommendationService(List.of(1L));
 
-        ReservationController controller = new ReservationController(
+        ReservationSearchService reservationSearchService = new ReservationSearchService(
                 tableRepository,
                 bookingRepository,
                 recommendationService
         );
+
+        ReservationController controller = new ReservationController(reservationSearchService);
 
         SearchRequest request = new SearchRequest();
         request.start = LocalDateTime.of(2026, 3, 7, 18, 0);
@@ -101,15 +104,13 @@ class ReservationControllerTest {
         private final List<Long> result;
 
         FakeRecommendationService(List<Long> result) {
-            super(
-                    new FakeTableRepository(List.of()),
-                    new FakeBookingRepository(List.of())
-            );
             this.result = result;
         }
 
         @Override
         public List<Long> recommendTables(
+                List<Table> tables,
+                List<Booking> bookings,
                 int partySize,
                 LocalDateTime start,
                 LocalDateTime end,

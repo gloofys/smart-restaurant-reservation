@@ -4,68 +4,101 @@ import com.example.cgi.core.domain.Booking;
 import com.example.cgi.core.domain.Preference;
 import com.example.cgi.core.domain.Table;
 import com.example.cgi.core.domain.Zone;
-import com.example.cgi.persistence.repository.BookingRepository;
-import com.example.cgi.persistence.repository.TableRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class RecommendationServiceTest {
 
-    private FakeTableRepository tableRepository;
-    private FakeBookingRepository bookingRepository;
     private RecommendationService recommendationService;
 
     @BeforeEach
     void setUp() {
-        tableRepository = new FakeTableRepository();
-        bookingRepository = new FakeBookingRepository();
-        recommendationService = new RecommendationService(tableRepository, bookingRepository);
+        recommendationService = new RecommendationService();
     }
 
     @Test
-    void shouldRecommendBestSingleTableWhenAvailable() {
-        tableRepository.setTables(List.of(
-                new Table(1, 2, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of()),
-                new Table(2, 4, Zone.MAIN_HALL, EnumSet.of(Preference.WINDOW), 0, 0, Set.of()),
-                new Table(3, 6, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of())
-        ));
+    void shouldRecommendBestSingleTableMatchingPreferences() {
+        LocalDateTime start = LocalDateTime.of(2026, 3, 7, 18, 0);
+        LocalDateTime end = start.plusMinutes(120);
+
+        Table table1 = new Table(
+                1,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.of(Preference.WINDOW),
+                120,
+                100,
+                Set.of()
+        );
+
+        Table table2 = new Table(
+                2,
+                6,
+                Zone.MAIN_HALL,
+                EnumSet.noneOf(Preference.class),
+                200,
+                100,
+                Set.of()
+        );
 
         List<Long> result = recommendationService.recommendTables(
+                List.of(table1, table2),
+                List.of(),
                 4,
+                start,
+                end,
+                Set.of(Preference.WINDOW),
+                Zone.MAIN_HALL
+        );
+
+        assertEquals(List.of(1L), result);
+    }
+
+    @Test
+    void shouldIgnoreOccupiedSingleTableAndRecommendAnotherAvailableOne() {
+        LocalDateTime start = LocalDateTime.of(2026, 3, 7, 18, 0);
+        LocalDateTime end = start.plusMinutes(120);
+
+        Table table1 = new Table(
+                1,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.of(Preference.WINDOW),
+                120,
+                100,
+                Set.of()
+        );
+
+        Table table2 = new Table(
+                2,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.noneOf(Preference.class),
+                200,
+                100,
+                Set.of()
+        );
+
+        Booking booking = new Booking(
+                1L,
                 LocalDateTime.of(2026, 3, 7, 18, 0),
                 LocalDateTime.of(2026, 3, 7, 20, 0),
-                Set.of(Preference.WINDOW),
-                Zone.MAIN_HALL
+                4
         );
 
-        assertEquals(List.of(2L), result);
-    }
-
-    @Test
-    void shouldIgnoreBookedTables() {
-        tableRepository.setTables(List.of(
-                new Table(1, 4, Zone.MAIN_HALL, EnumSet.of(Preference.WINDOW), 0, 0, Set.of()),
-                new Table(2, 6, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of())
-        ));
-
-        bookingRepository.setBookings(List.of(
-                new Booking(
-                        1L,
-                        LocalDateTime.of(2026, 3, 7, 18, 0),
-                        LocalDateTime.of(2026, 3, 7, 20, 0),
-                        2
-                )
-        ));
-
         List<Long> result = recommendationService.recommendTables(
+                List.of(table1, table2),
+                List.of(booking),
                 4,
-                LocalDateTime.of(2026, 3, 7, 18, 30),
-                LocalDateTime.of(2026, 3, 7, 19, 30),
+                start,
+                end,
                 Set.of(Preference.WINDOW),
                 Zone.MAIN_HALL
         );
@@ -74,17 +107,46 @@ class RecommendationServiceTest {
     }
 
     @Test
-    void shouldRecommendMergeablePairWhenSingleTableIsNotEnough() {
-        tableRepository.setTables(List.of(
-                new Table(1, 4, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of(2L)),
-                new Table(2, 4, Zone.MAIN_HALL, EnumSet.of(Preference.WINDOW), 0, 0, Set.of(1L)),
-                new Table(3, 6, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of())
-        ));
+    void shouldRecommendMergeablePairWhenNoSingleTableIsLargeEnough() {
+        LocalDateTime start = LocalDateTime.of(2026, 3, 7, 18, 0);
+        LocalDateTime end = start.plusMinutes(120);
+
+        Table table1 = new Table(
+                1,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.of(Preference.WINDOW),
+                120,
+                100,
+                Set.of(2L)
+        );
+
+        Table table2 = new Table(
+                2,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.noneOf(Preference.class),
+                200,
+                100,
+                Set.of(1L)
+        );
+
+        Table table3 = new Table(
+                3,
+                2,
+                Zone.MAIN_HALL,
+                EnumSet.noneOf(Preference.class),
+                300,
+                100,
+                Set.of()
+        );
 
         List<Long> result = recommendationService.recommendTables(
+                List.of(table1, table2, table3),
+                List.of(),
                 8,
-                LocalDateTime.of(2026, 3, 7, 18, 0),
-                LocalDateTime.of(2026, 3, 7, 20, 0),
+                start,
+                end,
                 Set.of(Preference.WINDOW),
                 Zone.MAIN_HALL
         );
@@ -93,16 +155,36 @@ class RecommendationServiceTest {
     }
 
     @Test
-    void shouldReturnEmptyListWhenNoSuitableTableOrPairExists() {
-        tableRepository.setTables(List.of(
-                new Table(1, 2, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of()),
-                new Table(2, 2, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of())
-        ));
+    void shouldReturnEmptyListWhenNoSingleOrPairCanFitParty() {
+        LocalDateTime start = LocalDateTime.of(2026, 3, 7, 18, 0);
+        LocalDateTime end = start.plusMinutes(120);
+
+        Table table1 = new Table(
+                1,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.noneOf(Preference.class),
+                120,
+                100,
+                Set.of()
+        );
+
+        Table table2 = new Table(
+                2,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.noneOf(Preference.class),
+                200,
+                100,
+                Set.of()
+        );
 
         List<Long> result = recommendationService.recommendTables(
+                List.of(table1, table2),
+                List.of(),
                 10,
-                LocalDateTime.of(2026, 3, 7, 18, 0),
-                LocalDateTime.of(2026, 3, 7, 20, 0),
+                start,
+                end,
                 Set.of(),
                 Zone.MAIN_HALL
         );
@@ -111,56 +193,40 @@ class RecommendationServiceTest {
     }
 
     @Test
-    void shouldFilterByZone() {
-        tableRepository.setTables(List.of(
-                new Table(1, 4, Zone.MAIN_HALL, EnumSet.noneOf(Preference.class), 0, 0, Set.of()),
-                new Table(2, 4, Zone.TERRACE, EnumSet.of(Preference.WINDOW), 0, 0, Set.of())
-        ));
+    void shouldOnlyRecommendTablesFromRequestedZone() {
+        LocalDateTime start = LocalDateTime.of(2026, 3, 7, 18, 0);
+        LocalDateTime end = start.plusMinutes(120);
+
+        Table mainHallTable = new Table(
+                1,
+                4,
+                Zone.MAIN_HALL,
+                EnumSet.of(Preference.WINDOW),
+                120,
+                100,
+                Set.of()
+        );
+
+        Table terraceTable = new Table(
+                2,
+                4,
+                Zone.TERRACE,
+                EnumSet.noneOf(Preference.class),
+                200,
+                100,
+                Set.of()
+        );
 
         List<Long> result = recommendationService.recommendTables(
+                List.of(mainHallTable, terraceTable),
+                List.of(),
                 4,
-                LocalDateTime.of(2026, 3, 7, 18, 0),
-                LocalDateTime.of(2026, 3, 7, 20, 0),
-                Set.of(Preference.WINDOW),
+                start,
+                end,
+                Set.of(),
                 Zone.TERRACE
         );
 
         assertEquals(List.of(2L), result);
-    }
-
-    private static class FakeTableRepository implements TableRepository {
-        private List<Table> tables = new ArrayList<>();
-
-        void setTables(List<Table> tables) {
-            this.tables = tables;
-        }
-
-        @Override
-        public List<Table> findAll() {
-            return tables;
-        }
-
-        @Override
-        public Optional<Table> findById(Long id) {
-            return tables.stream().filter(t -> Objects.equals(t.getId(), id)).findFirst();
-        }
-    }
-
-    private static class FakeBookingRepository implements BookingRepository {
-        private List<Booking> bookings = new ArrayList<>();
-
-        void setBookings(List<Booking> bookings) {
-            this.bookings = bookings;
-        }
-
-        @Override
-        public List<Booking> findAll() {
-            return bookings;
-        }
-
-        @Override
-        public void save(Booking booking) {
-            bookings.add(booking);
-        }
     }
 }
