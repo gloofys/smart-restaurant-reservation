@@ -2,6 +2,8 @@ type Props = {
     start: string;
     partySize: number;
     zone: string;
+    minStart: string;
+    maxStart: string;
     onChange: (patch: Partial<{ start: string; partySize: number; zone: string }>) => void;
     onSearch: () => void;
 };
@@ -12,6 +14,8 @@ export default function FilterBar({
                                       start,
                                       partySize,
                                       zone,
+                                      minStart,
+                                      maxStart,
                                       onChange,
                                       onSearch,
                                   }: Props) {
@@ -27,8 +31,8 @@ export default function FilterBar({
                     type="datetime-local"
                     value={start}
                     step={1800}
-                    min="2026-03-08T10:00"
-                    max="2026-06-31T22:00"
+                    min={minStart}
+                    max={maxStart}
                     onChange={(e) => onChange({start: e.target.value})}
                     className="rounded-lg border px-3 py-2"
                 />

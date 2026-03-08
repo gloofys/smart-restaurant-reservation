@@ -31,7 +31,10 @@ type AppliedFilters = {
     preferences: string[];
 };
 
-const INITIAL_START = "2026-03-05T19:00";
+const MIN_BOOKING_START = "2026-03-08T10:00";
+const MAX_BOOKING_START = "2026-06-30T22:00";
+const INITIAL_START = "2026-03-08T19:00";
+
 const INITIAL_PARTY_SIZE = 3;
 const INITIAL_ZONE = "ANY";
 const MAX_ONLINE_PARTY_SIZE = 12;
@@ -200,6 +203,8 @@ export default function App() {
                                 start={start}
                                 partySize={partySize}
                                 zone={zone}
+                                minStart={MIN_BOOKING_START}
+                                maxStart={MAX_BOOKING_START}
                                 onChange={(patch) => {
                                     if (patch.start !== undefined) setStart(patch.start);
                                     if (patch.partySize !== undefined) setPartySize(patch.partySize);
